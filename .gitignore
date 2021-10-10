@@ -1,2 +1,18 @@
+# Caches
 .precomp/
+node_modules/
+
+# Packages
+/sdist/
 /Terminal-LineEditor-*
+
+# Backup files
+*~
+
+# IDE files
+/.idea
+*.iml
+
+# Generated files
+/*.html
+/docs/*.html
