@@ -1,7 +1,7 @@
 NAME
 ====
 
-Terminal::LineEditor - blah blah blah
+Terminal::LineEditor - Generalized terminal line editing
 
 SYNOPSIS
 ========
@@ -13,7 +13,13 @@ use Terminal::LineEditor;
 DESCRIPTION
 ===========
 
-Terminal::LineEditor is ...
+`Terminal::LineEditor` is a terminal line editing package similar to `Linenoise` or `Readline`, but **not** a drop-in replacement for either of them. `Terminal::LineEditor` has a few key design differences:
+
+  * Implemented in pure Raku; `Linenoise` and `Readline` are Nativecall wrappers
+
+  * Features strong separation of concerns; all components are exposed and replaceable
+
+  * Useable both directly for simple CLI apps and embedded in TUI interfaces
 
 AUTHOR
 ======

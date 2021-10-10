@@ -1,4 +1,5 @@
 {
+  "auth": "zef:japhb",
   "authors": [
     "Geoffrey Broadwell"
   ],
@@ -6,7 +7,7 @@
   ],
   "depends": [
   ],
-  "description": "blah blah blah",
+  "description": "Generalized terminal line editing",
   "license": "Artistic-2.0",
   "name": "Terminal::LineEditor",
   "perl": "6.d",
