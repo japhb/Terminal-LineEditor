@@ -1,0 +1,24 @@
+{
+  "authors": [
+    "Geoffrey Broadwell"
+  ],
+  "build-depends": [
+  ],
+  "depends": [
+  ],
+  "description": "blah blah blah",
+  "license": "Artistic-2.0",
+  "name": "Terminal::LineEditor",
+  "perl": "6.d",
+  "provides": {
+    "Terminal::LineEditor": "lib/Terminal/LineEditor.rakumod"
+  },
+  "resources": [
+  ],
+  "source-url": "",
+  "tags": [
+  ],
+  "test-depends": [
+  ],
+  "version": "0.0.1"
+}
