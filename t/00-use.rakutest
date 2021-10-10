@@ -1,0 +1,10 @@
+use v6.d;
+use Test;
+
+use Terminal::LineEditor;
+
+
+pass "all modules loaded successfully";
+
+
+done-testing;

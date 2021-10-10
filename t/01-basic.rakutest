@@ -1,6 +1,0 @@
-use Test;
-use Terminal::LineEditor;
-
-pass "replace me";
-
-done-testing;
