@@ -12,7 +12,8 @@
   "name": "Terminal::LineEditor",
   "perl": "6.d",
   "provides": {
-    "Terminal::LineEditor": "lib/Terminal/LineEditor.rakumod"
+    "Terminal::LineEditor": "lib/Terminal/LineEditor.rakumod",
+    "Terminal::LineEditor::EditableBuffer": "lib/Terminal/LineEditor/EditableBuffer.rakumod"
   },
   "resources": [
   ],

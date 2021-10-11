@@ -2,6 +2,7 @@ use v6.d;
 use Test;
 
 use Terminal::LineEditor;
+use Terminal::LineEditor::EditableBuffer;
 
 
 pass "all modules loaded successfully";
