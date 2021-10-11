@@ -4,7 +4,7 @@
 #| General exceptions for Terminal::LineEditor
 class X::Terminal::LineEditor is Exception { }
 
-#| Invalid buffer position (for
+#| Invalid buffer position
 class X::Terminal::LineEditor::InvalidPosition is X::Terminal::LineEditor {
     has $.pos    is required;
     has $.reason is required;
@@ -33,8 +33,8 @@ role Terminal::LineEditor::EditableBuffer {
 
 
 #| Core functionality for a single line text buffer
-role Terminal::LineEditor::SingleLineTextBuffer
-does Terminal::LineEditor::EditableBuffer {
+class Terminal::LineEditor::SingleLineTextBuffer
+ does Terminal::LineEditor::EditableBuffer {
     has Str:D $.contents = '';
     has @.undo-records;
     has @.redo-records;
@@ -44,10 +44,10 @@ does Terminal::LineEditor::EditableBuffer {
 
     #| Throw an exception if a position is out of bounds or the wrong type
     method ensure-pos-valid($pos, Bool:D :$allow-end = False) {
-        X::Terminal::LineEditor::InvalidPosition.new($pos, :reason('position is not a defined nonnegative integer')).throw
-            unless $pos ~~ Int:D && $pos >= 0;
+        X::Terminal::LineEditor::InvalidPosition.new(:$pos, :reason('position is not a defined nonnegative integer')).throw
+            unless $pos ~~ Int && $pos.defined && $pos >= 0;
 
-        X::Terminal::LineEditor::InvalidPosition.new($pos, :reason('position is beyond the buffer end')).throw
+        X::Terminal::LineEditor::InvalidPosition.new(:$pos, :reason('position is beyond the buffer end')).throw
             unless $pos < $!contents.chars + $allow-end;
     }
 
