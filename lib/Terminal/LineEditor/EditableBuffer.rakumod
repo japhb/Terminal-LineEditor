@@ -51,7 +51,7 @@ class Terminal::LineEditor::SingleLineTextBuffer
     ### INVARIANT HELPERS
 
     #| Throw an exception if a position is out of bounds or the wrong type
-    method ensure-pos-valid($pos, Bool:D :$allow-end = False) {
+    method ensure-pos-valid($pos, Bool:D :$allow-end = True) {
         X::Terminal::LineEditor::InvalidPosition.new(:$pos, :reason('position is not a defined nonnegative integer')).throw
             unless $pos ~~ Int && $pos.defined && $pos >= 0;
 
@@ -247,7 +247,7 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
     #| Create a new cursor at $pos (defaulting to buffer start, pos 0),
     #| returning cursor ID (assigned locally to this buffer)
     method add-cursor(UInt:D $pos = 0) {
-        self.ensure-pos-valid($pos, :allow-end);
+        self.ensure-pos-valid($pos);
 
         my $id = ++⚛$!next-id;
         %!cursors{$id} = Terminal::LineEditor::SingleLineTextBuffer::Cursor.new(:$pos);
