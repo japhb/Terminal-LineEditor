@@ -12,6 +12,14 @@ class X::Terminal::LineEditor::InvalidPosition is X::Terminal::LineEditor {
     method message() { "Invalid editable buffer position: $!reason" }
 }
 
+#| Invalid or non-existant cursor
+class X::Terminal::LineEditor::InvalidCursor is X::Terminal::LineEditor {
+    has $.id     is required;
+    has $.reason is required;
+
+    method message() { "Invalid cursor: $!reason" }
+}
+
 
 #| Simple wrapper for undo/redo record pairs
 class Terminal::LineEditor::UndoRedo {
@@ -158,5 +166,90 @@ class Terminal::LineEditor::SingleLineTextBuffer
     #| Redo a previously undone edit (or silently do nothing if no undos left)
     method redo() {
         self.do-redo-record(@.redo-records.pop) if @.redo-records;
+    }
+}
+
+
+
+class Terminal::LineEditor::SingleLineTextBuffer::Cursor {
+    has UInt:D $.pos is rw = 0;
+}
+
+class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
+   is Terminal::LineEditor::SingleLineTextBuffer {
+    has atomicint $.next-id = 0;
+    has %.cursors;
+
+
+    ### INVARIANT HELPERS
+
+    #| Throw an exception if a cursor ID doesn't exist
+    method ensure-cursor-exists($id) {
+        X::Terminal::LineEditor::InvalidCursor.new($id, :reason('cursor ID does not exist')).throw
+            unless $id ~~ Cool && $id.defined && (%!cursors{$id}:exists);
+    }
+
+
+    ### LOW-LEVEL OPERATION APPLIERS, NOW CURSOR-AWARE
+
+    #| Apply a (previously validated) insert operation against current contents
+    multi method apply-operation('insert', $pos, $content) {
+        my $before = $.contents.chars;
+        callsame;
+        my $delta  = $.contents.chars - $before;
+
+        for @.cursors {
+            .pos += $delta if .pos >= $pos;
+        }
+    }
+
+    #| Apply a (previously validated) delete operation against current contents
+    multi method apply-operation('delete', $start, $after) {
+        callsame;
+        my $delta = $after - $start;
+
+        for @.cursors {
+            if    .pos >= $after { .pos -= $delta }
+            elsif .pos >= $start { .pos  = $start }
+        }
+    }
+
+    #| Apply a (previously validated) replace operation against current contents
+    multi method apply-operation('replace', $start, $after, $replacement) {
+        my $before = $.contents.chars;
+        callsame;
+        my $delta  = $.contents.chars - $before;
+
+        for @.cursors {
+            if    .pos >= $after { .pos += $delta }
+            elsif .pos >= $start { .pos  = $delta + $start }
+        }
+    }
+
+
+    ### CURSOR MANAGEMENT
+
+    #| Create a new cursor at $pos (defaulting to buffer start, pos 0),
+    #| returning cursor ID (assigned locally to this buffer)
+    method add-cursor(UInt:D $pos = 0) {
+        self.ensure-pos-valid($pos, :allow-end);
+
+        my $id = ++⚛$!next-id;
+        %!cursors{$id} = Terminal::LineEditor::SingleLineTextBuffer::Cursor.new(:$pos);
+        $id
+    }
+
+    #| Return cursor object for a given cursor ID
+    method cursor(UInt:D $id) {
+        self.ensure-cursor-exists($id);
+
+        %!cursors{$id}
+    }
+
+    #| Delete the cursor object for a given cursor ID
+    method delete-cursor(UInt:D $id) {
+        self.ensure-cursor-exists($id);
+
+        %!cursors{$id}:delete
     }
 }
