@@ -171,10 +171,25 @@ class Terminal::LineEditor::SingleLineTextBuffer
 
 
 
+#| A cursor for a SingleLineTextBuffer
 class Terminal::LineEditor::SingleLineTextBuffer::Cursor {
-    has UInt:D $.pos is rw = 0;
+    has UInt:D $.pos = 0;
+
+    # XXXX: Should these detect movement outside buffer?
+
+    #| Move to an absolute position in the buffer
+    method move-to(UInt:D $pos) {
+        $!pos = $pos;
+    }
+
+    #| Move relative to current position
+    method move-rel(Int:D $delta) {
+        $!pos += $delta;
+    }
 }
 
+
+#| A SingleLineTextBuffer with (possibly several) active insert cursors
 class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
    is Terminal::LineEditor::SingleLineTextBuffer {
     has atomicint $.next-id = 0;
@@ -199,7 +214,7 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
         my $delta  = $.contents.chars - $before;
 
         for @.cursors {
-            .pos += $delta if .pos >= $pos;
+            .move-rel($delta) if .pos >= $pos;
         }
     }
 
@@ -209,8 +224,8 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
         my $delta = $after - $start;
 
         for @.cursors {
-            if    .pos >= $after { .pos -= $delta }
-            elsif .pos >= $start { .pos  = $start }
+            if    .pos >= $after { .move-rel(-$delta) }
+            elsif .pos >= $start { .move-to($start) }
         }
     }
 
@@ -221,8 +236,8 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
         my $delta  = $.contents.chars - $before;
 
         for @.cursors {
-            if    .pos >= $after { .pos += $delta }
-            elsif .pos >= $start { .pos  = $delta + $start }
+            if    .pos >= $after { .move-rel($delta) }
+            elsif .pos >= $start { .move-to($delta + $start) }
         }
     }
 
