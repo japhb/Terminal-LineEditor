@@ -184,47 +184,55 @@ class Terminal::LineEditor::SingleLineTextBuffer
     }
 
 
-    ### EXTERNAL EDIT COMMANDS
+    ### EXTERNAL EDIT COMMANDS (return True iff actually edited)
 
     #| Insert a substring at a given position
-    method insert($pos, Str:D $content) {
+    method insert($pos, Str $content --> Bool) {
         self.ensure-pos-valid($pos);
 
-        self.new-redo-branch;
-        my $record = self.create-undo-redo-record('insert', $pos, $content);
-        self.do-redo-record($record);
+        if $content {
+            self.new-redo-branch;
+            my $record = self.create-undo-redo-record('insert', $pos, $content);
+            self.do-redo-record($record);
+            True
+        }
+        else { False }
     }
 
     #| Yank previously deleted text (if available) at a given position
-    method yank($pos) {
-        self.insert($pos, $.yankable) if $.yankable;
+    method yank($pos --> Bool) {
+        self.insert($pos, $.yankable)
     }
 
     #| Delete a substring at a given position range
-    method delete($start, $after) {
+    method delete($start, $after --> Bool) {
         self.ensure-pos-valid($_) for $start, $after;
 
         if $after - $start {
             self.new-redo-branch;
             my $record = self.create-undo-redo-record('delete', $start, $after);
             self.do-redo-record($record);
+            True
         }
+        else { False }
     }
 
     #| Delete a substring defined by starting position and length
-    method delete-length($start, $length) {
+    method delete-length($start, $length --> Bool) {
         self.delete($start, $start + $length)
     }
 
     #| Replace a substring at a given position range
-    method replace($start, $after, Str:D $content) {
+    method replace($start, $after, Str:D $content --> Bool) {
         self.ensure-pos-valid($_) for $start, $after;
 
         if $content || $after - $start {
             self.new-redo-branch;
             my $record = self.create-undo-redo-record('replace', $start, $after, $content);
             self.do-redo-record($record);
+            True
         }
+        else { False }
     }
 
     #| Replace a substring defined by starting position and length
@@ -233,13 +241,21 @@ class Terminal::LineEditor::SingleLineTextBuffer
     }
 
     #| Undo the previous edit (or silently do nothing if no edits left)
-    method undo() {
-        self.do-undo-record(@.undo-records.pop) if @.undo-records;
+    method undo(--> Bool) {
+        if @.undo-records {
+            self.do-undo-record(@.undo-records.pop);
+            True
+        }
+        else { False }
     }
 
     #| Redo a previously undone edit (or silently do nothing if no undos left)
-    method redo() {
-        self.do-redo-record(@.redo-records.pop) if @.redo-records;
+    method redo(--> Bool) {
+        if @.redo-records {
+            self.do-redo-record(@.redo-records.pop);
+            True
+        }
+        else { False }
     }
 }
 
@@ -373,7 +389,6 @@ role Terminal::LineEditor::SingleLineTextInput {
 
 
     # NOTE: Return values below indicate whether $!buffer may have been changed
-    # XXXX: Optimize a few more places that might be able to return False
 
     ### Refresh requests
     method edit-refresh(   --> False) {}
@@ -399,15 +414,15 @@ role Terminal::LineEditor::SingleLineTextInput {
 
 
     ### Delete
-    method edit-delete-char-back(--> True) {
-        $.buffer.delete-length($.cursor.move-rel(-1), 1) if $.cursor.pos;
+    method edit-delete-char-back(--> Bool) {
+        $.cursor.pos ?? $.buffer.delete-length($.cursor.move-rel(-1), 1) !! False
     }
 
-    method edit-delete-char-forward(--> True) {
-        $.buffer.delete-length($.cursor.pos, 1) unless $.cursor.at-end;
+    method edit-delete-char-forward(--> Bool) {
+        $.cursor.at-end ?? False !! $.buffer.delete-length($.cursor.pos, 1)
     }
 
-    method edit-delete-word-back(--> True) {
+    method edit-delete-word-back(--> Bool) {
         my $pos = $.cursor.pos;
         if $pos {
             my $cut     = $pos - 1;
@@ -418,9 +433,10 @@ role Terminal::LineEditor::SingleLineTextInput {
 
             $.buffer.delete($cut, $pos);
         }
+        else { False }
     }
 
-    method edit-delete-word-forward(--> True) {
+    method edit-delete-word-forward(--> Bool) {
         my $pos = $.cursor.pos;
         my $end = $.cursor.end;
         if $pos < $end {
@@ -432,31 +448,32 @@ role Terminal::LineEditor::SingleLineTextInput {
 
             $.buffer.delete($pos, $cut);
         }
+        else { False }
     }
 
-    method edit-delete-to-start(--> True) {
-        $.buffer.delete(0, $.cursor.pos);
+    method edit-delete-to-start(--> Bool) {
+        $.buffer.delete(0, $.cursor.pos)
     }
 
-    method edit-delete-to-end(--> True) {
-        $.buffer.delete($.cursor.pos, $.cursor.end);
+    method edit-delete-to-end(--> Bool) {
+        $.buffer.delete($.cursor.pos, $.cursor.end)
     }
 
-    method edit-delete-line(--> True) {
-        $.buffer.delete(0, $.cursor.end);
+    method edit-delete-line(--> Bool) {
+        $.buffer.delete(0, $.cursor.end)
     }
 
 
     ### Insert/Yank/Swap
-    method edit-insert-string(Str:D $string --> True) {
-        $.buffer.insert($string, $.cursor.pos);
+    method edit-insert-string(Str:D $string --> Bool) {
+        $.buffer.insert($string, $.cursor.pos)
     }
 
-    method edit-yank(--> True) {
-        $.buffer.yank($.cursor.pos);
+    method edit-yank(--> Bool) {
+        $.buffer.yank($.cursor.pos)
     }
 
-    method edit-swap-chars(--> True) {
+    method edit-swap-chars(--> Bool) {
         my $pos = $.cursor.pos;
         my $end = $.cursor.end;
         if $pos && $end > 1 {
@@ -467,5 +484,6 @@ role Terminal::LineEditor::SingleLineTextInput {
             my $char2    = substr($content, $swap-pos + 1, 1);
             $.buffer.replace-length($swap-pos, 2, $char2 ~ $char1);
         }
+        else { False }
     }
 }
