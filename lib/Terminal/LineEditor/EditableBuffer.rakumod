@@ -84,18 +84,20 @@ class Terminal::LineEditor::SingleLineTextBuffer
     multi method create-undo-redo-record('insert', $pos, $content) {
         # The complexity below is because the inserted string might start with
         # combining characters, and thus due to NFG renormalization insert-pos
-        # should move less than the full length of the inserted string.
+        # could move less than the full length of the inserted string.
 
         # XXXX: This is slow (doing a string copy), but until there is a fast
-        # solution for calculating the combined section and replacement length,
-        # it will have to do.
+        # solution for calculating the replacement length, it will have to do.
         my $temp      = $.contents;
         my $before    = $temp.chars;
         substr-rw($temp, $pos, 0) = $content;
         my $after-pos = $pos + $temp.chars - $before;
 
-        # XXXX: This is likely incorrect for modern Unicode
-        my $combined-section = $pos ?? substr($pos - 1, 1) !! '';
+        # XXXX: This may be incorrect for modern Unicode -- particularly when
+        # region indicators are involved -- but seems to conservatively follow
+        # MoarVM's current implementation (meaning it may have a false positive
+        # for combined section but never a false negative or undercount).
+        my $combined-section = $pos ?? substr($.contents, $pos - 1, 1) !! '';
         my $combined-start   = $pos - $combined-section.chars;
 
         $combined-section
