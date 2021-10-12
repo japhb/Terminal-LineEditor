@@ -44,6 +44,8 @@ role Terminal::LineEditor::EditableBuffer {
 class Terminal::LineEditor::SingleLineTextBuffer
  does Terminal::LineEditor::EditableBuffer {
     has Str:D $.contents = '';
+    has Str   $.yankable;
+
     has @.undo-records;
     has @.redo-records;
 
@@ -116,6 +118,8 @@ class Terminal::LineEditor::SingleLineTextBuffer
         # grapheme clusters.
 
         my $to-delete = substr($.contents, $start, $after - $start);
+        $!yankable    = $to-delete;
+
         Terminal::LineEditor::UndoRedo.new(
             :redo('delete', $start, $after),
             :undo('insert', $start, $to-delete))
@@ -149,6 +153,11 @@ class Terminal::LineEditor::SingleLineTextBuffer
         self.new-redo-branch;
         my $record = self.create-undo-redo-record('insert', $pos, $content);
         self.do-redo-record($record);
+    }
+
+    #| Yank previously deleted text (if available) at a given position
+    method yank($pos) {
+        self.insert($pos, $.yankable) if $.yankable;
     }
 
     #| Delete a substring at a given position range
