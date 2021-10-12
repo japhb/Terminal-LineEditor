@@ -161,12 +161,19 @@ class Terminal::LineEditor::SingleLineTextBuffer
     }
 
     #| Delete a substring at a given position range
-    method delete($start, $end) {
-        self.ensure-pos-valid($_) for $start, $end;
+    method delete($start, $after) {
+        self.ensure-pos-valid($_) for $start, $after;
 
-        self.new-redo-branch;
-        my $record = self.create-undo-redo-record('delete', $start, $end);
-        self.do-redo-record($record);
+        if $after - $start {
+            self.new-redo-branch;
+            my $record = self.create-undo-redo-record('delete', $start, $after);
+            self.do-redo-record($record);
+        }
+    }
+
+    #| Delete a substring defined by starting position and length
+    method delete-length($start, $length) {
+        self.delete($start, $start + $length)
     }
 
     #| Undo the previous edit (or silently do nothing if no edits left)
