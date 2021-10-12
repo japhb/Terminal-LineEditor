@@ -21,6 +21,15 @@ class X::Terminal::LineEditor::InvalidPosition is X::Terminal::LineEditor {
     method message() { "Invalid editable buffer position: $!reason" }
 }
 
+#| Invalid buffer range
+class X::Terminal::LineEditor::InvalidRange is X::Terminal::LineEditor {
+    has $.start  is required;
+    has $.after  is required;
+    has $.reason is required;
+
+    method message() { "Invalid editable buffer position range: $!reason" }
+}
+
 #| Invalid or non-existant cursor
 class X::Terminal::LineEditor::InvalidCursor is X::Terminal::LineEditor {
     has $.id     is required;
@@ -68,6 +77,16 @@ class Terminal::LineEditor::SingleLineTextBuffer
 
         X::Terminal::LineEditor::InvalidPosition.new(:$pos, :reason('position is beyond the buffer end')).throw
             unless $pos < $!contents.chars + $allow-end;
+    }
+
+
+    #| Throw an exception if a position range is nonsensical
+    method ensure-range-valid($start, $after) {
+        self.ensure-pos-valid($start);
+        self.ensure-pos-valid($after);
+
+        X::Terminal::LineEditor::InvalidRange.new(:$start, :$after, :reason('range endpoints are reversed')).throw
+            if $start > $after;
     }
 
 
@@ -206,7 +225,7 @@ class Terminal::LineEditor::SingleLineTextBuffer
 
     #| Delete a substring at a given position range
     method delete($start, $after --> Bool) {
-        self.ensure-pos-valid($_) for $start, $after;
+        self.ensure-range-valid($start, $after);
 
         if $after - $start {
             self.new-redo-branch;
@@ -224,7 +243,7 @@ class Terminal::LineEditor::SingleLineTextBuffer
 
     #| Replace a substring at a given position range
     method replace($start, $after, Str:D $content --> Bool) {
-        self.ensure-pos-valid($_) for $start, $after;
+        self.ensure-range-valid($start, $after);
 
         if $content || $after - $start {
             self.new-redo-branch;
