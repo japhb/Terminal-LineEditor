@@ -125,6 +125,37 @@ class Terminal::LineEditor::SingleLineTextBuffer
             :undo('insert', $start, $to-delete))
     }
 
+    #| Create an undo/redo record pair for a replace operation
+    multi method create-undo-redo-record('replace', $start, $after, $content) {
+        # Because replace includes a content insert, it has the same complexity
+        # as the insert case above: the inserted string might start with
+        # combining characters, so insert-pos could move less than the full
+        # length of the inserted string due to NFG renormalization.
+
+        # XXXX: This is slow (doing a string copy), but until there is a fast
+        # solution for calculating the replacement length, it will have to do.
+        my $temp     = $.contents;
+        my $before   = $temp.chars;
+        my $orig     = substr($temp, $start, $after - $start);
+        substr-rw($temp, $start, $after - $start) = $content;
+        my $adjusted = $after + $temp.chars - $before;
+
+        # XXXX: This may be incorrect for modern Unicode -- particularly when
+        # region indicators are involved -- but seems to conservatively follow
+        # MoarVM's current implementation (meaning it may have a false positive
+        # for combined section but never a false negative or undercount).
+        my $combined-section = $start ?? substr($.contents, $start - 1, 1) !! '';
+        my $combined-start   = $start - $combined-section.chars;
+
+        $combined-section || $orig
+        ?? Terminal::LineEditor::UndoRedo.new(
+            :redo('replace', $combined-start, $after, $combined-section ~ $content),
+            :undo('replace', $combined-start, $adjusted, $combined-section ~ $orig))
+        !! Terminal::LineEditor::UndoRedo.new(
+            :redo('insert',  $start, $content),
+            :undo('delete',  $start, $adjusted))
+    }
+
     #| Execute an undo record against current contents
     method do-undo-record($record) {
         self.apply-operation(|$record.undo);
@@ -174,6 +205,22 @@ class Terminal::LineEditor::SingleLineTextBuffer
     #| Delete a substring defined by starting position and length
     method delete-length($start, $length) {
         self.delete($start, $start + $length)
+    }
+
+    #| Replace a substring at a given position range
+    method replace($start, $after, Str:D $content) {
+        self.ensure-pos-valid($_) for $start, $after;
+
+        if $content || $after - $start {
+            self.new-redo-branch;
+            my $record = self.create-undo-redo-record('replace', $start, $after, $content);
+            self.do-redo-record($record);
+        }
+    }
+
+    #| Replace a substring defined by starting position and length
+    method replace-length($start, $length, Str:D $content) {
+        self.replace($start, $start + $length, $content)
     }
 
     #| Undo the previous edit (or silently do nothing if no edits left)
