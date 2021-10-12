@@ -3,6 +3,7 @@ use Test;
 
 use Terminal::LineEditor;
 use Terminal::LineEditor::EditableBuffer;
+use Terminal::LineEditor::DuospaceInput;
 
 
 pass "all modules loaded successfully";

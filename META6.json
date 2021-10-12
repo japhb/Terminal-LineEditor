@@ -13,6 +13,7 @@
   "perl": "6.d",
   "provides": {
     "Terminal::LineEditor": "lib/Terminal/LineEditor.rakumod",
+    "Terminal::LineEditor::DuospaceInput": "lib/Terminal/LineEditor/DuospaceInput.rakumod",
     "Terminal::LineEditor::EditableBuffer": "lib/Terminal/LineEditor/EditableBuffer.rakumod"
   },
   "resources": [
