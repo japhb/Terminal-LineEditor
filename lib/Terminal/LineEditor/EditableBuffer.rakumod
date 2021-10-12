@@ -1,6 +1,15 @@
 # ABSTRACT: Core roles for abstract editable buffers
 
 
+# GENERAL INVARIANTS MAINTAINED
+
+# * Content buffers are always in NFG Str form (tested in Raku for edge cases
+#   like inserting a combining mark between characters, and it Just Works).
+# * Edits are always done by applying an UndoRedo record (choosing the branch
+#   based on whether undoing or doing/redoing).
+# * Cursor positions are always within the range 0..$cursor.end.
+
+
 #| General exceptions for Terminal::LineEditor
 class X::Terminal::LineEditor is Exception { }
 
