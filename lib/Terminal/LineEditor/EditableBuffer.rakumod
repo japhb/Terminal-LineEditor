@@ -364,3 +364,108 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
         %!cursors{$id}:delete
     }
 }
+
+
+role Terminal::LineEditor::SingleLineTextInput {
+    has $.buffer-class = Terminal::LineEditor::SingleLineTextBuffer::WithCursors;
+    has $.buffer = $!buffer-class.new;
+    has $.cursor = $!buffer.add-cursor;
+
+
+    # NOTE: Return values below indicate whether $!buffer may have been changed
+    # XXXX: Optimize a few more places that might be able to return False
+
+    ### Refresh requests
+    method edit-refresh(   --> False) {}
+    method edit-refresh-all(--> True) {}
+
+
+    ### Cursor movement
+    method edit-move-to-start(--> False) {
+        $.cursor.move-to(0);
+    }
+
+    method edit-move-back(--> False) {
+        $.cursor.move-rel(-1);
+    }
+
+    method edit-move-forward(--> False) {
+        $.cursor.move-rel(+1);
+    }
+
+    method edit-move-to-end(--> False) {
+        $.cursor.move-to($.cursor.end);
+    }
+
+
+    ### Delete
+    method edit-delete-char-back(--> True) {
+        $.buffer.delete-length($.cursor.move-rel(-1), 1) if $.cursor.pos;
+    }
+
+    method edit-delete-char-forward(--> True) {
+        $.buffer.delete-length($.cursor.pos, 1) unless $.cursor.at-end;
+    }
+
+    method edit-delete-word-back(--> True) {
+        my $pos = $.cursor.pos;
+        if $pos {
+            my $cut     = $pos - 1;
+            my $content = $.buffer.contents;
+            --$cut while $cut >= 0 && substr($content, $cut, 1) ~~ /\s/;
+            --$cut while $cut >= 0 && substr($content, $cut, 1) ~~ /\S/;
+            $cut++;
+
+            $.buffer.delete($cut, $pos);
+        }
+    }
+
+    method edit-delete-word-forward(--> True) {
+        my $pos = $.cursor.pos;
+        my $end = $.cursor.end;
+        if $pos < $end {
+            my $cut     = $pos;
+            my $content = $.buffer.contents;
+            ++$cut while $cut < $end && substr($content, $cut, 1) ~~ /\s/;
+            ++$cut while $cut < $end && substr($content, $cut, 1) ~~ /\S/;
+            $cut--;
+
+            $.buffer.delete($pos, $cut);
+        }
+    }
+
+    method edit-delete-to-start(--> True) {
+        $.buffer.delete(0, $.cursor.pos);
+    }
+
+    method edit-delete-to-end(--> True) {
+        $.buffer.delete($.cursor.pos, $.cursor.end);
+    }
+
+    method edit-delete-line(--> True) {
+        $.buffer.delete(0, $.cursor.end);
+    }
+
+
+    ### Insert/Yank/Swap
+    method edit-insert-string(Str:D $string --> True) {
+        $.buffer.insert($string, $.cursor.pos);
+    }
+
+    method edit-yank(--> True) {
+        $.buffer.yank($.cursor.pos);
+    }
+
+    method edit-swap-chars(--> True) {
+        my $pos = $.cursor.pos;
+        my $end = $.cursor.end;
+        if $pos && $end > 1 {
+            my $at-end   = $pos == $end;
+            my $swap-pos = $pos - 1 - $at-end;
+            my $content  = $.buffer.contents;
+            my $char1    = substr($content, $swap-pos,     1);
+            my $char2    = substr($content, $swap-pos + 1, 1);
+            $.buffer.replace-length($swap-pos, 2, $char2 ~ $char1);
+        }
+    }
+}
