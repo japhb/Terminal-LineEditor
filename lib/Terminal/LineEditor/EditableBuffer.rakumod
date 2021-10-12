@@ -173,18 +173,40 @@ class Terminal::LineEditor::SingleLineTextBuffer
 
 #| A cursor for a SingleLineTextBuffer
 class Terminal::LineEditor::SingleLineTextBuffer::Cursor {
+    has Terminal::LineEditor::SingleLineTextBuffer:D $.buffer is required;
     has UInt:D $.pos = 0;
+    has $.id is required;
 
-    # XXXX: Should these detect movement outside buffer?
+    # XXXX: Should there be other failure modes if moving outside contents?
 
-    #| Move to an absolute position in the buffer
+    #| Calculate end position (greatest possible insert position)
+    method end() {
+        $.buffer.contents.chars
+    }
+
+    #| Determine if cursor is already at the end
+    method at-end() {
+        $.pos == self.end
+    }
+
+    #| Move to an absolute position in the buffer; returns new position
     method move-to(UInt:D $pos) {
+        # Silently clip to end of buffer
+        my $end = self.end;
+        $pos = $end if $pos > $end;
+
         $!pos = $pos;
     }
 
-    #| Move relative to current position
+    #| Move relative to current position; returns new position
     method move-rel(Int:D $delta) {
-        $!pos += $delta;
+        # Silently clip to buffer
+        my $pos = $!pos + $delta;
+        my $end = self.end;
+
+        $!pos = $pos < 0    ?? 0    !!
+                $pos > $end ?? $end !!
+                               $pos;
     }
 }
 
@@ -192,6 +214,7 @@ class Terminal::LineEditor::SingleLineTextBuffer::Cursor {
 #| A SingleLineTextBuffer with (possibly several) active insert cursors
 class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
    is Terminal::LineEditor::SingleLineTextBuffer {
+    has $.cursor-class = Terminal::LineEditor::SingleLineTextBuffer::Cursor;
     has atomicint $.next-id = 0;
     has %.cursors;
 
@@ -250,8 +273,7 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
         self.ensure-pos-valid($pos);
 
         my $id = ++⚛$!next-id;
-        %!cursors{$id} = Terminal::LineEditor::SingleLineTextBuffer::Cursor.new(:$pos);
-        $id
+        %!cursors{$id} = $.cursor-class.new(:$id, :$pos, :buffer(self));
     }
 
     #| Return cursor object for a given cursor ID
