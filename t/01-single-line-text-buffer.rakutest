@@ -1,0 +1,268 @@
+use v6.d;
+use Test;
+
+use Terminal::LineEditor;
+use Terminal::LineEditor::EditableBuffer;
+
+plan 174;
+
+
+### BASICS
+
+# Roles
+does-ok Terminal::LineEditor::SingleLineTextBuffer,
+        Terminal::LineEditor::EditableBuffer;
+
+
+# Instantiation
+my $buffer = Terminal::LineEditor::SingleLineTextBuffer.new;
+isa-ok  $buffer, Terminal::LineEditor::SingleLineTextBuffer;
+does-ok $buffer, Terminal::LineEditor::EditableBuffer;
+
+my $prefilled = Terminal::LineEditor::SingleLineTextBuffer.new(:contents('foo bar baz'));
+isa-ok  $prefilled, Terminal::LineEditor::SingleLineTextBuffer;
+does-ok $prefilled, Terminal::LineEditor::EditableBuffer;
+
+
+# contents()
+is $buffer.contents,    '';
+is $prefilled.contents, 'foo bar baz';
+my $pre-chars = $prefilled.contents.chars;
+
+
+# ensure-pos-valid()
+lives-ok    { $buffer.ensure-pos-valid(0) };
+throws-like { $buffer.ensure-pos-valid(1) },
+            X::Terminal::LineEditor::InvalidPosition;
+
+lives-ok    { $prefilled.ensure-pos-valid(0) };
+lives-ok    { $prefilled.ensure-pos-valid($pre-chars) };
+throws-like { $prefilled.ensure-pos-valid($pre-chars, :!allow-end) },
+            X::Terminal::LineEditor::InvalidPosition;
+throws-like { $prefilled.ensure-pos-valid($pre-chars + 1) },
+            X::Terminal::LineEditor::InvalidPosition;
+
+
+# ensure-range-valid()
+lives-ok    { $buffer.ensure-range-valid(0, 0) };
+throws-like { $buffer.ensure-range-valid(0, 1) },
+            X::Terminal::LineEditor::InvalidPosition;
+
+lives-ok    { $prefilled.ensure-range-valid(0, 0) };
+lives-ok    { $prefilled.ensure-range-valid(0, 1) };
+lives-ok    { $prefilled.ensure-range-valid(2, $pre-chars) };
+throws-like { $prefilled.ensure-range-valid(2, $pre-chars + 1) },
+            X::Terminal::LineEditor::InvalidPosition;
+throws-like { $prefilled.ensure-range-valid(2, 1) },
+            X::Terminal::LineEditor::InvalidRange;
+
+
+# insert()
+throws-like { $buffer.insert(1, 'buzz') },
+            X::Terminal::LineEditor::InvalidPosition;
+ok $buffer.insert(0, 'buzz');
+is $buffer.contents, 'buzz';
+ok $buffer.insert(4, 'ing');
+is $buffer.contents, 'buzzing';
+ok $buffer.insert(0, 'loud ');
+is $buffer.contents, 'loud buzzing';
+ok $buffer.insert(4, 'er');
+is $buffer.contents, 'louder buzzing';
+
+
+# delete()
+throws-like { $buffer.delete(20, 21) },
+            X::Terminal::LineEditor::InvalidPosition;
+throws-like { $buffer.delete(10, 2) },
+            X::Terminal::LineEditor::InvalidRange;
+
+nok $buffer.delete(0, 0);
+is  $buffer.contents, 'louder buzzing';
+nok $buffer.delete(3, 3);
+is  $buffer.contents, 'louder buzzing';
+nok $buffer.delete(14, 14);
+is  $buffer.contents, 'louder buzzing';
+ok  $buffer.delete(13, 14);
+is  $buffer.contents, 'louder buzzin';
+ok  $buffer.delete(4, 6);
+is  $buffer.contents, 'loud buzzin';
+
+
+# delete-length()
+throws-like { $buffer.delete-length(20, 1) },
+            X::Terminal::LineEditor::InvalidPosition;
+throws-like { $buffer.delete-length(10, -1) },
+            X::Terminal::LineEditor::InvalidRange;
+
+nok $buffer.delete-length(10, 0);
+is  $buffer.contents, 'loud buzzin';
+ok  $buffer.delete-length(9, 2);
+is  $buffer.contents, 'loud buzz';
+
+
+# yank()
+throws-like { $buffer.yank(20) },
+            X::Terminal::LineEditor::InvalidPosition;
+
+ok $buffer.yank(9);
+is $buffer.contents, 'loud buzzin';
+ok $buffer.yank(0);
+is $buffer.contents, 'inloud buzzin';
+
+
+# replace()
+throws-like { $buffer.replace(20, 21, 'foo') },
+            X::Terminal::LineEditor::InvalidPosition;
+throws-like { $buffer.replace(5, 3, 'bar') },
+            X::Terminal::LineEditor::InvalidRange;
+
+nok $buffer.replace(0, 0, '');
+is  $buffer.contents, 'inloud buzzin';
+ok  $buffer.replace(0, 2, '');
+is  $buffer.contents, 'loud buzzin';
+ok  $buffer.replace(4, 4, 'est');
+is  $buffer.contents, 'loudest buzzin';
+ok  $buffer.replace(12, 14, 'er');
+is  $buffer.contents, 'loudest buzzer';
+
+
+# replace-length()
+throws-like { $buffer.replace-length(20, 1, 'foo') },
+            X::Terminal::LineEditor::InvalidPosition;
+throws-like { $buffer.replace-length(5, -3, 'bar') },
+            X::Terminal::LineEditor::InvalidRange;
+
+nok $buffer.replace-length(3, 0, '');
+is  $buffer.contents, 'loudest buzzer';
+ok  $buffer.replace-length(2, 2, 'ng');
+is  $buffer.contents, 'longest buzzer';
+ok  $buffer.replace-length(14, 0, 's');
+is  $buffer.contents, 'longest buzzers';
+ok  $buffer.replace-length(0, 4, 'quiet');
+is  $buffer.contents, 'quietest buzzers';
+
+
+### UNDO/REDO
+
+# Basic
+nok $buffer.redo;
+is  $buffer.contents, 'quietest buzzers';
+ok  $buffer.undo;
+is  $buffer.contents, 'longest buzzers';
+ok  $buffer.redo;
+is  $buffer.contents, 'quietest buzzers';
+nok $buffer.redo;
+is  $buffer.contents, 'quietest buzzers';
+
+nok $prefilled.undo;
+is  $prefilled.contents, 'foo bar baz';
+nok $prefilled.redo;
+is  $prefilled.contents, 'foo bar baz';
+
+
+# Undo/redo of standard ops
+ok  $prefilled.insert(8, 'buzz ');
+is  $prefilled.contents, 'foo bar buzz baz';
+ok  $prefilled.undo;
+is  $prefilled.contents, 'foo bar baz';
+nok $prefilled.undo;
+is  $prefilled.contents, 'foo bar baz';
+ok  $prefilled.redo;
+is  $prefilled.contents, 'foo bar buzz baz';
+nok $prefilled.redo;
+is  $prefilled.contents, 'foo bar buzz baz';
+
+ok  $prefilled.delete(10, 11);
+is  $prefilled.contents, 'foo bar buz baz';
+ok  $prefilled.undo;
+is  $prefilled.contents, 'foo bar buzz baz';
+ok  $prefilled.redo;
+is  $prefilled.contents, 'foo bar buz baz';
+nok $prefilled.redo;
+is  $prefilled.contents, 'foo bar buz baz';
+ok  $prefilled.undo;
+is  $prefilled.contents, 'foo bar buzz baz';
+
+ok  $prefilled.replace(8, 12, 'blitz');
+is  $prefilled.contents, 'foo bar blitz baz';
+ok  $prefilled.undo;
+is  $prefilled.contents, 'foo bar buzz baz';
+ok  $prefilled.redo;
+is  $prefilled.contents, 'foo bar blitz baz';
+nok $prefilled.redo;
+is  $prefilled.contents, 'foo bar blitz baz';
+
+ok  $prefilled.replace-length(1, 2, 'ads');
+is  $prefilled.contents, 'fads bar blitz baz';
+ok  $prefilled.undo;
+is  $prefilled.contents, 'foo bar blitz baz';
+ok  $prefilled.redo;
+is  $prefilled.contents, 'fads bar blitz baz';
+nok $prefilled.redo;
+is  $prefilled.contents, 'fads bar blitz baz';
+
+ok  $prefilled.delete-length(0, 5);
+is  $prefilled.contents, 'bar blitz baz';
+ok  $prefilled.undo;
+is  $prefilled.contents, 'fads bar blitz baz';
+ok  $prefilled.redo;
+is  $prefilled.contents, 'bar blitz baz';
+nok $prefilled.redo;
+is  $prefilled.contents, 'bar blitz baz';
+
+ok  $prefilled.yank(4);
+is  $prefilled.contents, 'bar fads blitz baz';
+ok  $prefilled.undo;
+is  $prefilled.contents, 'bar blitz baz';
+ok  $prefilled.redo;
+is  $prefilled.contents, 'bar fads blitz baz';
+nok $prefilled.redo;
+is  $prefilled.contents, 'bar fads blitz baz';
+
+
+# Full-length undo/redo
+ok  $prefilled.undo;
+is  $prefilled.contents, 'bar blitz baz';
+ok  $prefilled.undo;
+is  $prefilled.contents, 'fads bar blitz baz';
+ok  $prefilled.undo;
+is  $prefilled.contents, 'foo bar blitz baz';
+ok  $prefilled.undo;
+is  $prefilled.contents, 'foo bar buzz baz';
+ok  $prefilled.undo;
+is  $prefilled.contents, 'foo bar baz';
+nok $prefilled.undo;
+is  $prefilled.contents, 'foo bar baz';
+
+ok  $prefilled.redo;
+is  $prefilled.contents, 'foo bar buzz baz';
+ok  $prefilled.redo;
+is  $prefilled.contents, 'foo bar blitz baz';
+ok  $prefilled.redo;
+is  $prefilled.contents, 'fads bar blitz baz';
+ok  $prefilled.redo;
+is  $prefilled.contents, 'bar blitz baz';
+ok  $prefilled.redo;
+is  $prefilled.contents, 'bar fads blitz baz';
+nok $prefilled.redo;
+is  $prefilled.contents, 'bar fads blitz baz';
+
+
+# Undo partway and then normal op trims redos
+ok  $prefilled.undo;
+ok  $prefilled.undo;
+ok  $prefilled.undo;
+is  $prefilled.contents, 'foo bar blitz baz';
+ok  $prefilled.delete-length(7, 10);
+is  $prefilled.contents, 'foo bar';
+nok $prefilled.redo;
+is  $prefilled.contents, 'foo bar';
+ok  $prefilled.undo;
+is  $prefilled.contents, 'foo bar blitz baz';
+ok  $prefilled.redo;
+is  $prefilled.contents, 'foo bar';
+nok $prefilled.redo;
+is  $prefilled.contents, 'foo bar';
+
+
+done-testing;
