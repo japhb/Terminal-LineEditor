@@ -263,9 +263,7 @@ class Terminal::LineEditor::SingleLineTextBuffer::Cursor {
     method move-to(UInt:D $pos) {
         # Silently clip to end of buffer
         my $end = self.end;
-        $pos = $end if $pos > $end;
-
-        $!pos = $pos;
+        $!pos   = $pos > $end ?? $end !! $pos;
     }
 
     #| Move relative to current position; returns new position
