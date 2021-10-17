@@ -48,13 +48,25 @@ class Terminal::LineEditor::UndoRedo {
 
 #| Core methods for any editable buffer
 role Terminal::LineEditor::EditableBuffer {
-    method contents()             { ... }
-    method ensure-pos-valid($pos) { ... }
-    method insert($pos, $content) { ... }
-    method delete($start, $after) { ... }
+    # Return raw buffer contents
+    method contents()                                { ... }
+
+    # Throw exception if pos or range not valid
+    method ensure-pos-valid($pos, :$allow-end)       { ... }
+    method ensure-range-valid($start, $after)        { ... }
+
+    # Perform primitive edit operations
+    method insert($pos, $content)                    { ... }
+    method yank($pos)                                { ... }
+    method delete($start, $after)                    { ... }
+    method delete-length($start, $length)            { ... }
+    method replace($start, $after, $content)         { ... }
+    method replace-length($start, $length, $content) { ... }
+
+    # Undo/redo
     # XXXX: Support out-of-order undo/redo
-    method undo()                 { ... }
-    method redo()                 { ... }
+    method undo()                                    { ... }
+    method redo()                                    { ... }
 }
 
 
