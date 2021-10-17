@@ -404,7 +404,7 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
 role Terminal::LineEditor::SingleLineTextInput {
     has $.buffer-class = Terminal::LineEditor::SingleLineTextBuffer::WithCursors;
     has $.buffer = $!buffer-class.new;
-    has $.cursor = $!buffer.add-cursor;
+    has $.insert-cursor = $!buffer.add-cursor;
 
 
     # NOTE: Return values below indicate whether $!buffer may have been changed
@@ -416,33 +416,37 @@ role Terminal::LineEditor::SingleLineTextInput {
 
     ### Cursor movement
     method edit-move-to-start(--> False) {
-        $.cursor.move-to(0);
+        $.insert-cursor.move-to(0);
     }
 
     method edit-move-back(--> False) {
-        $.cursor.move-rel(-1);
+        $.insert-cursor.move-rel(-1);
     }
 
     method edit-move-forward(--> False) {
-        $.cursor.move-rel(+1);
+        $.insert-cursor.move-rel(+1);
     }
 
     method edit-move-to-end(--> False) {
-        $.cursor.move-to($.cursor.end);
+        $.insert-cursor.move-to($.insert-cursor.end);
     }
 
 
     ### Delete
     method edit-delete-char-back(--> Bool) {
-        $.cursor.pos ?? $.buffer.delete-length($.cursor.move-rel(-1), 1) !! False
+        $.insert-cursor.pos
+        ?? $.buffer.delete-length($.insert-cursor.move-rel(-1), 1)
+        !! False
     }
 
     method edit-delete-char-forward(--> Bool) {
-        $.cursor.at-end ?? False !! $.buffer.delete-length($.cursor.pos, 1)
+        $.insert-cursor.at-end
+        ?? False
+        !! $.buffer.delete-length($.insert-cursor.pos, 1)
     }
 
     method edit-delete-word-back(--> Bool) {
-        my $pos = $.cursor.pos;
+        my $pos = $.insert-cursor.pos;
         if $pos {
             my $cut     = $pos - 1;
             my $content = $.buffer.contents;
@@ -456,8 +460,8 @@ role Terminal::LineEditor::SingleLineTextInput {
     }
 
     method edit-delete-word-forward(--> Bool) {
-        my $pos = $.cursor.pos;
-        my $end = $.cursor.end;
+        my $pos = $.insert-cursor.pos;
+        my $end = $.insert-cursor.end;
         if $pos < $end {
             my $cut     = $pos;
             my $content = $.buffer.contents;
@@ -471,30 +475,30 @@ role Terminal::LineEditor::SingleLineTextInput {
     }
 
     method edit-delete-to-start(--> Bool) {
-        $.buffer.delete(0, $.cursor.pos)
+        $.buffer.delete(0, $.insert-cursor.pos)
     }
 
     method edit-delete-to-end(--> Bool) {
-        $.buffer.delete($.cursor.pos, $.cursor.end)
+        $.buffer.delete($.insert-cursor.pos, $.insert-cursor.end)
     }
 
     method edit-delete-line(--> Bool) {
-        $.buffer.delete(0, $.cursor.end)
+        $.buffer.delete(0, $.insert-cursor.end)
     }
 
 
     ### Insert/Yank/Swap
     method edit-insert-string(Str:D $string --> Bool) {
-        $.buffer.insert($string, $.cursor.pos)
+        $.buffer.insert($string, $.insert-cursor.pos)
     }
 
     method edit-yank(--> Bool) {
-        $.buffer.yank($.cursor.pos)
+        $.buffer.yank($.insert-cursor.pos)
     }
 
     method edit-swap-chars(--> Bool) {
-        my $pos = $.cursor.pos;
-        my $end = $.cursor.end;
+        my $pos = $.insert-cursor.pos;
+        my $end = $.insert-cursor.end;
         if $pos && $end > 1 {
             my $at-end   = $pos == $end;
             my $swap-pos = $pos - 1 - $at-end;
