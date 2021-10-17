@@ -39,13 +39,6 @@ class X::Terminal::LineEditor::InvalidCursor is X::Terminal::LineEditor {
 }
 
 
-#| Simple wrapper for undo/redo record pairs
-class Terminal::LineEditor::UndoRedo {
-    has $.undo;
-    has $.redo;
-}
-
-
 #| Core methods for any editable buffer
 role Terminal::LineEditor::EditableBuffer {
     # Return raw buffer contents
@@ -67,6 +60,13 @@ role Terminal::LineEditor::EditableBuffer {
     # XXXX: Support out-of-order undo/redo
     method undo()                                    { ... }
     method redo()                                    { ... }
+}
+
+
+#| Simple wrapper class for undo/redo record pairs
+class Terminal::LineEditor::UndoRedo {
+    has $.undo is required;
+    has $.redo is required;
 }
 
 
