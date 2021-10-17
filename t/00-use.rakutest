@@ -2,6 +2,7 @@ use v6.d;
 use Test;
 
 use Terminal::LineEditor;
+use Terminal::LineEditor::Core;
 use Terminal::LineEditor::EditableBuffer;
 use Terminal::LineEditor::DuospaceInput;
 use Terminal::LineEditor::RawTerminalInput;
