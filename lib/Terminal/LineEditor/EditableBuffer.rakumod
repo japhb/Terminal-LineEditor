@@ -293,7 +293,7 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
 
     #| Throw an exception if a cursor ID doesn't exist
     method ensure-cursor-exists($id) {
-        X::Terminal::LineEditor::InvalidCursor.new($id, :reason('cursor ID does not exist')).throw
+        X::Terminal::LineEditor::InvalidCursor.new(:$id, :reason('cursor ID does not exist')).throw
             unless $id ~~ Cool && $id.defined && (%!cursors{$id}:exists);
     }
 
