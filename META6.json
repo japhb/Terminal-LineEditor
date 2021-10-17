@@ -14,7 +14,8 @@
   "provides": {
     "Terminal::LineEditor": "lib/Terminal/LineEditor.rakumod",
     "Terminal::LineEditor::DuospaceInput": "lib/Terminal/LineEditor/DuospaceInput.rakumod",
-    "Terminal::LineEditor::EditableBuffer": "lib/Terminal/LineEditor/EditableBuffer.rakumod"
+    "Terminal::LineEditor::EditableBuffer": "lib/Terminal/LineEditor/EditableBuffer.rakumod",
+    "Terminal::LineEditor::RawTerminalInput": "lib/Terminal/LineEditor/RawTerminalInput.rakumod"
   },
   "resources": [
   ],
