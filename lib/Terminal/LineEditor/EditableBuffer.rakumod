@@ -304,7 +304,7 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
         callsame;
         my $delta  = $.contents.chars - $before;
 
-        for @.cursors {
+        for %.cursors.values {
             .move-rel($delta) if .pos >= $pos;
         }
     }
@@ -314,7 +314,7 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
         callsame;
         my $delta = $after - $start;
 
-        for @.cursors {
+        for %.cursors.values {
             if    .pos >= $after { .move-rel(-$delta) }
             elsif .pos >= $start { .move-to($start) }
         }
@@ -326,7 +326,7 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
         callsame;
         my $delta  = $.contents.chars - $before;
 
-        for @.cursors {
+        for %.cursors.values {
             if    .pos >= $after { .move-rel($delta) }
             elsif .pos >= $start { .move-to($delta + $start) }
         }
