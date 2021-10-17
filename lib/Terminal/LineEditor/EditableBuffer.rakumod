@@ -77,19 +77,20 @@ class Terminal::LineEditor::SingleLineTextBuffer
         # combining characters, and thus due to NFG renormalization insert-pos
         # could move less than the full length of the inserted string.
 
-        # XXXX: This is slow (doing a string copy), but until there is a fast
-        # solution for calculating the replacement length, it will have to do.
+        # XXXX: This is slow (doing multiple string copies), but until there is
+        # a fast solution for calculating the replacement it will have to do.
         my $temp      = $.contents;
         my $before    = $temp.chars;
         substr-rw($temp, $pos, 0) = $content;
         my $after-pos = $pos + $temp.chars - $before;
 
-        # XXXX: This may be incorrect for modern Unicode -- particularly when
-        # region indicators are involved -- but seems to conservatively follow
-        # MoarVM's current implementation (meaning it may have a false positive
-        # for combined section but never a false negative or undercount).
-        my $combined-section = $pos ?? substr($.contents, $pos - 1, 1) !! '';
-        my $combined-start   = $pos - $combined-section.chars;
+        my $combined-section = '';
+        if $pos {
+            my $prev = substr($.contents, $pos - 1, 1);
+            my $cur  = substr($temp,      $pos - 1, 1);
+            $combined-section = $prev if $prev ne $cur;
+        }
+        my $combined-start = $pos - $combined-section.chars;
 
         $combined-section
         ?? Terminal::LineEditor::UndoRedo.new(
@@ -121,20 +122,22 @@ class Terminal::LineEditor::SingleLineTextBuffer
         # combining characters, so insert-pos could move less than the full
         # length of the inserted string due to NFG renormalization.
 
-        # XXXX: This is slow (doing a string copy), but until there is a fast
-        # solution for calculating the replacement length, it will have to do.
+        # XXXX: This is slow (doing multiple string copies), but until there is
+        # a fast solution for calculating the replacement it will have to do.
         my $temp     = $.contents;
         my $before   = $temp.chars;
         my $orig     = substr($temp, $start, $after - $start);
         substr-rw($temp, $start, $after - $start) = $content;
         my $adjusted = $after + $temp.chars - $before;
 
-        # XXXX: This may be incorrect for modern Unicode -- particularly when
-        # region indicators are involved -- but seems to conservatively follow
-        # MoarVM's current implementation (meaning it may have a false positive
-        # for combined section but never a false negative or undercount).
-        my $combined-section = $start ?? substr($.contents, $start - 1, 1) !! '';
-        my $combined-start   = $start - $combined-section.chars;
+
+        my $combined-section = '';
+        if $start {
+            my $prev = substr($.contents, $start - 1, 1);
+            my $cur  = substr($temp,      $start - 1, 1);
+            $combined-section = $prev if $prev ne $cur;
+        }
+        my $combined-start = $start - $combined-section.chars;
 
         $combined-section || $orig
         ?? Terminal::LineEditor::UndoRedo.new(
