@@ -32,7 +32,7 @@ role Terminal::LineEditor::DuospaceLayoutCache {
     method substring-width(UInt:D $start, UInt:D $after) {
         # XXXX: For RTL, auto-swap $start and $after?
 
-        X::Terminal::LineEditor::InvalidRange.new(:$start, :$after, :reason("nonsensical substring range {$start}..^{$after} for string of length { @!char-widths-prefix-sum.elems }.")).throw
+        X::Terminal::LineEditor::InvalidRange.new(:$start, :$after, :reason("nonsensical substring range {$start}..^{$after} for string of length { @!char-widths.elems }.")).throw
             unless 0 <= $start <= $after < @!char-widths-prefix-sum;
 
         @!char-widths-prefix-sum[$after] - @!char-widths-prefix-sum[$start]
