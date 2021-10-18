@@ -471,4 +471,14 @@ role Terminal::LineEditor::SingleLineTextInput {
         }
         else { False }
     }
+
+
+    ### Undo/Redo
+    method edit-undo(--> Bool) {
+        $.buffer.undo
+    }
+
+    method edit-redo(--> Bool) {
+        $.buffer.redo
+    }
 }
