@@ -364,8 +364,8 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
 
 
 role Terminal::LineEditor::SingleLineTextInput {
-    has $.buffer-class = Terminal::LineEditor::SingleLineTextBuffer::WithCursors;
-    has $.buffer = $!buffer-class.new;
+    has $.buffer-class  = Terminal::LineEditor::SingleLineTextBuffer::WithCursors;
+    has $.buffer        = $!buffer-class.new;
     has $.insert-cursor = $!buffer.add-cursor;
 
 
