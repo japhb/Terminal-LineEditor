@@ -5,7 +5,7 @@ use Terminal::LineEditor;
 use Terminal::LineEditor::DuospaceInput;
 
 
-plan 43;
+plan 44;
 
 
 # Compose role into a stub class
@@ -24,6 +24,10 @@ is $dlc.char-width('A'),    1;
 is $dlc.char-width("\xA0"), 1;
 is $dlc.char-width('Ò'),    1;
 is $dlc.char-width('ᅏ'),    2;
+
+
+# substring-width() without recompute-widths() first
+dies-ok { $dlc.substring-width(0, 0) };
 
 
 # recompute-widths() / substring-width(): Empty string
