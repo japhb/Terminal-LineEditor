@@ -331,7 +331,7 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
 
         for %.cursors.values {
             if    .pos >= $after { .move-rel($delta) }
-            elsif .pos >= $start { .move-to($delta + $start) }
+            elsif .pos >= $start { .move-to($delta + $after) }
         }
     }
 
