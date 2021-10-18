@@ -55,7 +55,7 @@ class Terminal::LineEditor::ScrollingSingleLineInput
 
     # Initialize scroll-cursor in TWEAK so buffer is ready
     submethod TWEAK() {
-        $!scroll-cursor = self.buffer.add-cursor;
+        $!scroll-cursor = self.buffer.add-cursor(:!auto-edit-move);
     }
 
 

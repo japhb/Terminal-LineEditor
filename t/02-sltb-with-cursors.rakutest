@@ -5,7 +5,7 @@ use Terminal::LineEditor;
 use Terminal::LineEditor::EditableBuffer;
 
 
-plan 101;
+plan 141;
 
 
 ### BASICS
@@ -83,17 +83,25 @@ my $c = $prefilled.add-cursor;
 my $d = $prefilled.add-cursor(4);
 my $e = $prefilled.add-cursor(9);
 my $f = $prefilled.add-cursor(11);
+my $g = $prefilled.add-cursor(:!auto-edit-move);
+my $h = $prefilled.add-cursor(5, :!auto-edit-move);
 is $c.pos, 0;
 is $d.pos, 4;
 is $e.pos, 9;
 is $f.pos, 11;
+is $g.pos, 0;
+is $h.pos, 5;
 
 $c.move-rel(-1);
 $e.move-rel(-2);
 $f.move-rel(+1);
+$g.move-rel(-1);
+$h.move-rel(+0);
 is $c.pos, 0;
 is $e.pos, 7;
 is $f.pos, 11;
+is $g.pos, 0;
+is $h.pos, 5;
 
 $e.move-to(5);
 $f.move-to(20);
@@ -108,6 +116,8 @@ is $c.pos, 0;
 is $d.pos, 4;
 is $e.pos, 6;
 is $f.pos, 12;
+is $g.pos, 0;
+is $h.pos, 5;
 
 my $accent = "\c[COMBINING ACUTE ACCENT]";
 $prefilled.insert(6, $accent);
@@ -116,6 +126,8 @@ is $c.pos, 0;
 is $d.pos, 4;
 is $e.pos, 6;
 is $f.pos, 12;
+is $g.pos, 0;
+is $h.pos, 5;
 
 $prefilled.undo;
 is $prefilled.contents, 'barflee flaz';
@@ -123,6 +135,8 @@ is $c.pos, 0;
 is $d.pos, 4;
 is $e.pos, 6;
 is $f.pos, 12;
+is $g.pos, 0;
+is $h.pos, 5;
 
 $prefilled.delete(0, 3);
 is $prefilled.contents, 'flee flaz';
@@ -130,6 +144,8 @@ is $c.pos, 0;
 is $d.pos, 1;
 is $e.pos, 3;
 is $f.pos, 9;
+is $g.pos, 0;
+is $h.pos, 5;
 
 # NOTE: See Edge Cases in the README for several non-obvious cases below
 
@@ -139,6 +155,8 @@ is $c.pos, 3;
 is $d.pos, 4;
 is $e.pos, 6;
 is $f.pos, 12;
+is $g.pos, 0;
+is $h.pos, 5;
 
 $prefilled.delete-length(3, 5);
 is $prefilled.contents, 'barflaz';
@@ -146,6 +164,8 @@ is $c.pos, 3;
 is $d.pos, 3;
 is $e.pos, 3;
 is $f.pos, 7;
+is $g.pos, 0;
+is $h.pos, 5;
 
 $prefilled.undo;
 is $prefilled.contents, 'barflee flaz';
@@ -153,6 +173,8 @@ is $c.pos, 8;
 is $d.pos, 8;
 is $e.pos, 8;
 is $f.pos, 12;
+is $g.pos, 0;
+is $h.pos, 5;
 
 $c.move-rel(-1);
 $e.move-rel(+1);
@@ -160,6 +182,8 @@ is $c.pos, 7;
 is $d.pos, 8;
 is $e.pos, 9;
 is $f.pos, 12;
+is $g.pos, 0;
+is $h.pos, 5;
 
 $prefilled.yank(8);
 is $prefilled.contents, 'barflee flee flaz';
@@ -167,6 +191,8 @@ is $c.pos, 7;
 is $d.pos, 13;
 is $e.pos, 14;
 is $f.pos, 17;
+is $g.pos, 0;
+is $h.pos, 5;
 
 $prefilled.undo;
 is $prefilled.contents, 'barflee flaz';
@@ -174,6 +200,8 @@ is $c.pos, 7;
 is $d.pos, 8;
 is $e.pos, 9;
 is $f.pos, 12;
+is $g.pos, 0;
+is $h.pos, 5;
 
 $prefilled.replace-length(8, 2, 'b');
 is $prefilled.contents, 'barflee baz';
@@ -188,6 +216,26 @@ is $c.pos, 7;
 is $d.pos, 10;
 is $e.pos, 10;
 is $f.pos, 12;
+is $g.pos, 0;
+is $h.pos, 5;
+
+$prefilled.delete-length(3, 9);
+is $prefilled.contents, 'bar';
+is $c.pos, 3;
+is $d.pos, 3;
+is $e.pos, 3;
+is $f.pos, 3;
+is $g.pos, 0;
+is $h.pos, 3;
+
+$prefilled.undo;
+is $prefilled.contents, 'barflee flaz';
+is $c.pos, 12;
+is $d.pos, 12;
+is $e.pos, 12;
+is $f.pos, 12;
+is $g.pos, 0;
+is $h.pos, 3;
 
 
 done-testing;

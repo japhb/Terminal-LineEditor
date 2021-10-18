@@ -247,6 +247,7 @@ class Terminal::LineEditor::SingleLineTextBuffer
 #| A cursor for a SingleLineTextBuffer
 class Terminal::LineEditor::SingleLineTextBuffer::Cursor {
     has Terminal::LineEditor::SingleLineTextBuffer:D $.buffer is required;
+    has Bool:D $.auto-edit-move = True;
     has UInt:D $.pos = 0;
     has $.id is required;
 
@@ -308,7 +309,7 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
         my $delta  = $.contents.chars - $before;
 
         for %.cursors.values {
-            .move-rel($delta) if .pos >= $pos;
+            .move-rel(.auto-edit-move ?? $delta !! 0) if .pos >= $pos;
         }
     }
 
@@ -318,8 +319,8 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
         my $delta = $after - $start;
 
         for %.cursors.values {
-            if    .pos >= $after { .move-rel(-$delta) }
-            elsif .pos >= $start { .move-to($start) }
+            if    .pos >= $after { .move-rel(.auto-edit-move ?? -$delta !! 0) }
+            elsif .pos >= $start { .auto-edit-move ?? .move-to($start) !! .move-rel(0) }
         }
     }
 
@@ -330,8 +331,8 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
         my $delta  = $.contents.chars - $before;
 
         for %.cursors.values {
-            if    .pos >= $after { .move-rel($delta) }
-            elsif .pos >= $start { .move-to($delta + $after) }
+            if    .pos >= $after { .move-rel(.auto-edit-move ?? $delta !! 0) }
+            elsif .pos >= $start { .auto-edit-move ?? .move-to($delta + $after) !! .move-rel(0) }
         }
     }
 
@@ -339,12 +340,15 @@ class Terminal::LineEditor::SingleLineTextBuffer::WithCursors
     ### CURSOR MANAGEMENT
 
     #| Create a new cursor at $pos (defaulting to buffer start, pos 0),
-    #| returning cursor ID (assigned locally to this buffer)
-    method add-cursor(UInt:D $pos = 0) {
+    #| returning cursor ID (assigned locally to this buffer); the cursor
+    #| automatically adjusts position whenever edits change the surrounding
+    #| content if auto-edit-move is True (the default)
+    method add-cursor(UInt:D $pos = 0, Bool:D :$auto-edit-move = True) {
         self.ensure-pos-valid($pos);
 
         my $id = ++⚛$!next-id;
-        %!cursors{$id} = $.cursor-class.new(:$id, :$pos, :buffer(self));
+        %!cursors{$id} = $.cursor-class.new(:$id, :$pos, :buffer(self),
+                                            :$auto-edit-move);
     }
 
     #| Return cursor object for a given cursor ID
