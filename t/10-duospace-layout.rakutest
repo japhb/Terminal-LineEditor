@@ -1,0 +1,101 @@
+use v6.d;
+use Test;
+
+use Terminal::LineEditor;
+use Terminal::LineEditor::DuospaceInput;
+
+
+plan 43;
+
+
+# Compose role into a stub class
+class DLC does Terminal::LineEditor::DuospaceLayoutCache { }
+
+
+# Roles
+my $dlc = DLC.new;
+does-ok $dlc, Terminal::LineEditor::DuospaceLayoutCache;
+
+
+# char-width()
+is $dlc.char-width(''),     0;
+is $dlc.char-width("\e"),   0;
+is $dlc.char-width('A'),    1;
+is $dlc.char-width("\xA0"), 1;
+is $dlc.char-width('Ò'),    1;
+is $dlc.char-width('ᅏ'),    2;
+
+
+# recompute-widths() / substring-width(): Empty string
+
+$dlc.recompute-widths('');
+throws-like { $dlc.substring-width(0, 1) },
+            X::Terminal::LineEditor::InvalidRange;
+is $dlc.substring-width(0, 0), 0;
+
+$dlc.recompute-widths('', '');
+throws-like { $dlc.substring-width(0, 1) },
+            X::Terminal::LineEditor::InvalidRange;
+is $dlc.substring-width(0, 0), 0;
+
+$dlc.recompute-widths('', '**');
+throws-like { $dlc.substring-width(0, 1) },
+            X::Terminal::LineEditor::InvalidRange;
+is $dlc.substring-width(0, 0), 0;
+
+
+# recompute-widths() / substring-width(): ASCII string
+
+$dlc.recompute-widths('AbCdE');
+throws-like { $dlc.substring-width(0, 6) },
+            X::Terminal::LineEditor::InvalidRange;
+is $dlc.substring-width(0, 0), 0;
+is $dlc.substring-width(0, 1), 1;
+is $dlc.substring-width(2, 4), 2;
+is $dlc.substring-width(2, 5), 3;
+
+$dlc.recompute-widths('AbCdE', '');
+throws-like { $dlc.substring-width(0, 6) },
+            X::Terminal::LineEditor::InvalidRange;
+is $dlc.substring-width(0, 0), 0;
+is $dlc.substring-width(0, 1), 0;
+is $dlc.substring-width(2, 4), 0;
+is $dlc.substring-width(2, 5), 0;
+
+$dlc.recompute-widths('AbCdE', '**');
+throws-like { $dlc.substring-width(0, 6) },
+            X::Terminal::LineEditor::InvalidRange;
+is $dlc.substring-width(0, 0), 0;
+is $dlc.substring-width(0, 1), 2;
+is $dlc.substring-width(2, 4), 4;
+is $dlc.substring-width(2, 5), 6;
+
+
+# recompute-widths() / substring-width(): Mixed-script string
+
+$dlc.recompute-widths("\eA\xA0Òᅏ");
+throws-like { $dlc.substring-width(0, 6) },
+            X::Terminal::LineEditor::InvalidRange;
+is $dlc.substring-width(0, 0), 0;
+is $dlc.substring-width(0, 1), 0;
+is $dlc.substring-width(2, 4), 2;
+is $dlc.substring-width(2, 5), 4;
+
+$dlc.recompute-widths("\eA\xA0Òᅏ", '');
+throws-like { $dlc.substring-width(0, 6) },
+            X::Terminal::LineEditor::InvalidRange;
+is $dlc.substring-width(0, 0), 0;
+is $dlc.substring-width(0, 1), 0;
+is $dlc.substring-width(2, 4), 0;
+is $dlc.substring-width(2, 5), 0;
+
+$dlc.recompute-widths("\eA\xA0Òᅏ", '**');
+throws-like { $dlc.substring-width(0, 6) },
+            X::Terminal::LineEditor::InvalidRange;
+is $dlc.substring-width(0, 0), 0;
+is $dlc.substring-width(0, 1), 2;
+is $dlc.substring-width(2, 4), 4;
+is $dlc.substring-width(2, 5), 6;
+
+
+done-testing;
