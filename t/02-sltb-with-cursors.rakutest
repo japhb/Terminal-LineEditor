@@ -1,0 +1,193 @@
+use v6.d;
+use Test;
+
+use Terminal::LineEditor;
+use Terminal::LineEditor::EditableBuffer;
+
+
+plan 101;
+
+
+### BASICS
+
+# MRO/roles
+isa-ok  Terminal::LineEditor::SingleLineTextBuffer::WithCursors,
+        Terminal::LineEditor::SingleLineTextBuffer;
+does-ok Terminal::LineEditor::SingleLineTextBuffer::WithCursors,
+        Terminal::LineEditor::EditableBuffer;
+
+my $buffer = Terminal::LineEditor::SingleLineTextBuffer::WithCursors.new;
+isa-ok  $buffer, Terminal::LineEditor::SingleLineTextBuffer;
+does-ok $buffer, Terminal::LineEditor::EditableBuffer;
+isa-ok  $buffer.cursor-class, Terminal::LineEditor::SingleLineTextBuffer::Cursor;
+
+
+# Cursor management
+nok $buffer.cursors.elems, 'cursor collection starts empty';
+throws-like { $buffer.ensure-cursor-exists(1) },
+            X::Terminal::LineEditor::InvalidCursor;
+
+my $start = $buffer.add-cursor;
+isa-ok $start, $buffer.cursor-class;
+ok $buffer.cursors.elems;
+
+my $id = $start.id;
+lives-ok { $buffer.ensure-cursor-exists($id) };
+ok $start === $buffer.cursor($id);
+
+lives-ok    { $buffer.delete-cursor($id) };
+throws-like { $buffer.ensure-cursor-exists($id) },
+            X::Terminal::LineEditor::InvalidCursor;
+throws-like { $buffer.cursor($id) },
+            X::Terminal::LineEditor::InvalidCursor;
+throws-like { $buffer.delete-cursor($id) },
+            X::Terminal::LineEditor::InvalidCursor;
+
+throws-like { $buffer.add-cursor(1) },
+            X::Terminal::LineEditor::InvalidPosition;
+nok $buffer.cursors.elems;
+
+
+# Cursor positioning in empty buffer
+my $a = $buffer.add-cursor;
+my $b = $buffer.add-cursor(0);
+nok $a === $b;
+
+is $a.pos, 0;
+is $a.pos, 0;
+is $a.end, 0;
+is $b.end, 0;
+ok $a.at-end;
+ok $b.at-end;
+
+$a.move-to(10);
+is $a.pos, 0;
+is $a.end, 0;
+ok $a.at-end;
+
+$a.move-rel(-5);
+is $a.pos, 0;
+is $a.end, 0;
+ok $a.at-end;
+
+$a.move-rel(+7);
+is $a.pos, 0;
+is $a.end, 0;
+ok $a.at-end;
+
+
+# Cursor positioning in filled buffer (silently clipped to contents)
+my $prefilled = Terminal::LineEditor::SingleLineTextBuffer::WithCursors.new:
+                :contents('barfle flaz');
+my $c = $prefilled.add-cursor;
+my $d = $prefilled.add-cursor(4);
+my $e = $prefilled.add-cursor(9);
+my $f = $prefilled.add-cursor(11);
+is $c.pos, 0;
+is $d.pos, 4;
+is $e.pos, 9;
+is $f.pos, 11;
+
+$c.move-rel(-1);
+$e.move-rel(-2);
+$f.move-rel(+1);
+is $c.pos, 0;
+is $e.pos, 7;
+is $f.pos, 11;
+
+$e.move-to(5);
+$f.move-to(20);
+is $e.pos, 5;
+is $f.pos, 11;
+
+
+# Cursor auto-updates
+$prefilled.insert(5, 'e');
+is $prefilled.contents, 'barflee flaz';
+is $c.pos, 0;
+is $d.pos, 4;
+is $e.pos, 6;
+is $f.pos, 12;
+
+my $accent = "\c[COMBINING ACUTE ACCENT]";
+$prefilled.insert(6, $accent);
+is $prefilled.contents, 'barflée flaz';
+is $c.pos, 0;
+is $d.pos, 4;
+is $e.pos, 6;
+is $f.pos, 12;
+
+$prefilled.undo;
+is $prefilled.contents, 'barflee flaz';
+is $c.pos, 0;
+is $d.pos, 4;
+is $e.pos, 6;
+is $f.pos, 12;
+
+$prefilled.delete(0, 3);
+is $prefilled.contents, 'flee flaz';
+is $c.pos, 0;
+is $d.pos, 1;
+is $e.pos, 3;
+is $f.pos, 9;
+
+# NOTE: See Edge Cases in the README for several non-obvious cases below
+
+$prefilled.undo;
+is $prefilled.contents, 'barflee flaz';
+is $c.pos, 3;
+is $d.pos, 4;
+is $e.pos, 6;
+is $f.pos, 12;
+
+$prefilled.delete-length(3, 5);
+is $prefilled.contents, 'barflaz';
+is $c.pos, 3;
+is $d.pos, 3;
+is $e.pos, 3;
+is $f.pos, 7;
+
+$prefilled.undo;
+is $prefilled.contents, 'barflee flaz';
+is $c.pos, 8;
+is $d.pos, 8;
+is $e.pos, 8;
+is $f.pos, 12;
+
+$c.move-rel(-1);
+$e.move-rel(+1);
+is $c.pos, 7;
+is $d.pos, 8;
+is $e.pos, 9;
+is $f.pos, 12;
+
+$prefilled.yank(8);
+is $prefilled.contents, 'barflee flee flaz';
+is $c.pos, 7;
+is $d.pos, 13;
+is $e.pos, 14;
+is $f.pos, 17;
+
+$prefilled.undo;
+is $prefilled.contents, 'barflee flaz';
+is $c.pos, 7;
+is $d.pos, 8;
+is $e.pos, 9;
+is $f.pos, 12;
+
+$prefilled.replace-length(8, 2, 'b');
+is $prefilled.contents, 'barflee baz';
+is $c.pos, 7;
+is $d.pos, 9;
+is $e.pos, 9;
+is $f.pos, 11;
+
+$prefilled.undo;
+is $prefilled.contents, 'barflee flaz';
+is $c.pos, 7;
+is $d.pos, 10;
+is $e.pos, 10;
+is $f.pos, 12;
+
+
+done-testing;
