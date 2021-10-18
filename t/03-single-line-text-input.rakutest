@@ -1,0 +1,336 @@
+use v6.d;
+use Test;
+
+use Terminal::LineEditor;
+use Terminal::LineEditor::EditableBuffer;
+
+
+plan 243;
+
+
+# Compose role into a stub class
+class SLTI does Terminal::LineEditor::SingleLineTextInput { }
+
+
+# BASICS
+
+# MRO/Roles
+my $input = SLTI.new;
+does-ok $input, Terminal::LineEditor::SingleLineTextInput;
+isa-ok  $input.buffer-class,
+        Terminal::LineEditor::SingleLineTextBuffer::WithCursors;
+isa-ok  $input.buffer, $input.buffer-class;
+isa-ok  $input.insert-cursor, Terminal::LineEditor::SingleLineTextBuffer::Cursor;
+
+
+# EMPTY BUFFER BEHAVIOR
+
+# Refresh requests
+nok $input.edit-refresh;
+ok  $input.edit-refresh-all;
+
+
+# Cursor movement on empty buffer
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+nok $input.edit-move-to-start;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+nok $input.edit-move-back;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+nok $input.edit-move-forward;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+nok $input.edit-move-to-end;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+
+
+# Delete on empty buffer
+nok $input.edit-delete-char-back;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+nok $input.edit-delete-char-forward;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+nok $input.edit-delete-word-back;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+nok $input.edit-delete-word-forward;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+nok $input.edit-delete-to-start;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+nok $input.edit-delete-to-end;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+nok $input.edit-delete-line;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+
+
+# Yank with empty yank buffer
+nok $input.edit-yank;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+
+
+# Swap-chars on empty buffer
+nok $input.edit-swap-chars;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+
+
+# Undo/redo with no change history
+nok $input.edit-undo;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+nok $input.edit-redo;
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+
+
+# FILLED BUFFER BEHAVIOR
+
+# Inserts
+ok  $input.edit-insert-string('foo');
+is  $input.buffer.contents, 'foo';
+is  $input.insert-cursor.pos, 3;
+ok  $input.insert-cursor.at-end;
+
+ok  $input.edit-insert-string(' baz');
+is  $input.buffer.contents, 'foo baz';
+is  $input.insert-cursor.pos, 7;
+ok  $input.insert-cursor.at-end;
+
+
+# Refresh requests
+nok $input.edit-refresh;
+ok  $input.edit-refresh-all;
+
+
+# Movement in filled buffer
+nok $input.edit-move-to-end;
+is  $input.insert-cursor.pos, 7;
+ok  $input.insert-cursor.at-end;
+nok $input.edit-move-forward;
+is  $input.insert-cursor.pos, 7;
+ok  $input.insert-cursor.at-end;
+
+nok $input.edit-move-back;
+is  $input.insert-cursor.pos, 6;
+nok $input.insert-cursor.at-end;
+nok $input.edit-move-to-start;
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+
+nok $input.edit-move-back;
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+nok $input.edit-move-to-start;
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+
+nok $input.edit-move-forward;
+is  $input.insert-cursor.pos, 1;
+nok $input.insert-cursor.at-end;
+nok $input.edit-move-to-end;
+is  $input.insert-cursor.pos, 7;
+ok  $input.insert-cursor.at-end;
+
+
+# Swap chars
+ok  $input.edit-swap-chars;
+is  $input.buffer.contents, 'foo bza';
+is  $input.insert-cursor.pos, 7;
+ok  $input.insert-cursor.at-end;
+
+nok $input.edit-move-back;
+is  $input.insert-cursor.pos, 6;
+nok $input.insert-cursor.at-end;
+ok  $input.edit-swap-chars;
+is  $input.buffer.contents, 'foo baz';
+is  $input.insert-cursor.pos, 7;
+ok  $input.insert-cursor.at-end;
+
+nok $input.edit-move-back;
+nok $input.edit-move-back;
+is  $input.insert-cursor.pos, 5;
+nok $input.insert-cursor.at-end;
+ok  $input.edit-swap-chars;
+is  $input.buffer.contents, 'foo abz';
+is  $input.insert-cursor.pos, 6;
+nok $input.insert-cursor.at-end;
+
+nok $input.edit-move-to-start;
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+nok $input.edit-swap-chars;
+is  $input.buffer.contents, 'foo abz';
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+
+nok $input.edit-move-forward;
+is  $input.insert-cursor.pos, 1;
+nok $input.insert-cursor.at-end;
+ok  $input.edit-swap-chars;
+is  $input.buffer.contents, 'ofo abz';
+is  $input.insert-cursor.pos, 2;
+nok $input.insert-cursor.at-end;
+
+
+# Delete/Yank
+ok  $input.edit-delete-char-back;
+is  $input.buffer.contents, 'oo abz';
+is  $input.insert-cursor.pos, 1;
+nok $input.insert-cursor.at-end;
+
+ok  $input.edit-delete-char-back;
+is  $input.buffer.contents, 'o abz';
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+
+nok $input.edit-delete-char-back;
+is  $input.buffer.contents, 'o abz';
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+
+ok  $input.edit-yank;
+is  $input.buffer.contents, 'oo abz';
+is  $input.insert-cursor.pos, 1;
+nok $input.insert-cursor.at-end;
+
+ok  $input.edit-yank;
+is  $input.buffer.contents, 'ooo abz';
+is  $input.insert-cursor.pos, 2;
+nok $input.insert-cursor.at-end;
+
+ok  $input.edit-delete-char-forward;
+is  $input.buffer.contents, 'oo abz';
+is  $input.insert-cursor.pos, 2;
+nok $input.insert-cursor.at-end;
+
+nok $input.edit-move-to-end;
+nok $input.edit-delete-char-forward;
+is  $input.buffer.contents, 'oo abz';
+is  $input.insert-cursor.pos, 6;
+ok  $input.insert-cursor.at-end;
+
+ok  $input.edit-delete-word-back;
+is  $input.buffer.contents, 'oo ';
+is  $input.insert-cursor.pos, 3;
+ok  $input.insert-cursor.at-end;
+
+ok  $input.edit-delete-word-back;
+is  $input.buffer.contents, '';
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+
+nok $input.edit-delete-word-back;
+is  $input.buffer.contents, '';
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+
+ok  $input.edit-insert-string('foo  bar  baz');
+is  $input.buffer.contents, 'foo  bar  baz';
+is  $input.insert-cursor.pos, 13;
+ok  $input.insert-cursor.at-end;
+
+nok $input.edit-delete-word-forward;
+is  $input.buffer.contents, 'foo  bar  baz';
+is  $input.insert-cursor.pos, 13;
+ok  $input.insert-cursor.at-end;
+
+nok $input.edit-move-to-start;
+ok  $input.edit-delete-word-forward;
+is  $input.buffer.contents, '  bar  baz';
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+
+ok  $input.edit-delete-word-forward;
+is  $input.buffer.contents, '  baz';
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+
+nok $input.edit-move-to-end;
+ok  $input.edit-yank;
+is  $input.buffer.contents, '  baz  bar';
+is  $input.insert-cursor.pos, 10;
+ok  $input.insert-cursor.at-end;
+
+nok($input.edit-move-back) xx 4;
+is  $input.insert-cursor.pos, 6;
+nok $input.insert-cursor.at-end;
+
+ok  $input.edit-delete-to-start;
+is  $input.buffer.contents, ' bar';
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+
+nok $input.edit-delete-to-start;
+is  $input.buffer.contents, ' bar';
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+
+nok($input.edit-move-forward) xx 2;
+is  $input.insert-cursor.pos, 2;
+nok $input.insert-cursor.at-end;
+
+ok  $input.edit-delete-to-end;
+is  $input.buffer.contents, ' b';
+is  $input.insert-cursor.pos, 2;
+ok  $input.insert-cursor.at-end;
+
+nok $input.edit-delete-to-end;
+is  $input.buffer.contents, ' b';
+is  $input.insert-cursor.pos, 2;
+ok  $input.insert-cursor.at-end;
+
+ok  $input.edit-delete-line;
+is  $input.buffer.contents, '';
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+
+nok $input.edit-delete-line;
+is  $input.buffer.contents, '';
+is  $input.insert-cursor.pos, 0;
+ok  $input.insert-cursor.at-end;
+
+
+# Undo/Redo
+ok  $input.edit-undo;
+is  $input.buffer.contents, ' b';
+is  $input.insert-cursor.pos, 2;
+ok  $input.insert-cursor.at-end;
+
+ok  $input.edit-undo;
+is  $input.buffer.contents, ' bar';
+is  $input.insert-cursor.pos, 4;
+ok  $input.insert-cursor.at-end;
+
+ok  $input.edit-undo;
+is  $input.buffer.contents, '  baz  bar';
+is  $input.insert-cursor.pos, 10;
+ok  $input.insert-cursor.at-end;
+
+nok $input.edit-move-to-start;
+ok  $input.edit-undo;
+is  $input.buffer.contents, '  baz';
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+
+ok  $input.edit-redo;
+is  $input.buffer.contents, '  baz  bar';
+is  $input.insert-cursor.pos, 0;
+nok $input.insert-cursor.at-end;
+
+nok $input.edit-move-to-end;
+ok  $input.edit-redo;
+is  $input.buffer.contents, ' bar';
+is  $input.insert-cursor.pos, 4;
+ok  $input.insert-cursor.at-end;
+
+
+done-testing;
