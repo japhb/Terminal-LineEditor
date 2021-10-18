@@ -1,0 +1,149 @@
+use v6.d;
+use Test;
+
+use Terminal::LineEditor;
+use Terminal::LineEditor::DuospaceInput;
+
+
+plan 51;
+
+
+# BASICS
+
+# MRO/Roles
+does-ok Terminal::LineEditor::ScrollingSingleLineInput,
+        Terminal::LineEditor::SingleLineTextInput;
+does-ok Terminal::LineEditor::ScrollingSingleLineInput,
+        Terminal::LineEditor::DuospaceLayoutCache;
+
+dies-ok { Terminal::LineEditor::ScrollingSingleLineInput.new };
+my $input = Terminal::LineEditor::ScrollingSingleLineInput.new(:display-width(40));
+does-ok $input, Terminal::LineEditor::SingleLineTextInput;
+does-ok $input, Terminal::LineEditor::DuospaceLayoutCache;
+
+isa-ok  $input.buffer, $input.buffer-class;
+isa-ok  $input.insert-cursor, Terminal::LineEditor::SingleLineTextBuffer::Cursor;
+isa-ok  $input.scroll-cursor, $input.insert-cursor.WHAT;
+
+
+# Default marks
+is $input.left-scroll-mark,     '⯇';
+is $input.right-scroll-mark,    '⯈';
+is $input.left-no-scroll-mark,  ' ';
+is $input.right-no-scroll-mark, ' ';
+
+
+# available-width()
+# NOTE: default marks are all a single cell wide
+is $input.available-width, $input.display-width - 2;
+
+
+# scroll-to-insert-pos()
+is $input.insert-cursor.pos, 0;
+is $input.scroll-cursor.pos, 0;
+
+dies-ok { $input.scroll-to-insert-pos };
+$input.recompute-widths($input.buffer.contents);
+$input.scroll-to-insert-pos;
+is $input.insert-cursor.pos, 0;
+is $input.scroll-cursor.pos, 0;
+
+$input.edit-insert-string('a' x 80);
+is $input.insert-cursor.pos, 80;
+is $input.scroll-cursor.pos, 0;
+
+$input.recompute-widths($input.buffer.contents);
+$input.scroll-to-insert-pos;
+is $input.insert-cursor.pos, 80;
+is $input.scroll-cursor.pos, 42;
+
+$input.edit-move-to-start;
+is $input.insert-cursor.pos, 0;
+is $input.scroll-cursor.pos, 42;
+
+$input.scroll-to-insert-pos;
+is $input.insert-cursor.pos, 0;
+is $input.scroll-cursor.pos, 0;
+
+
+# visible-input-field-string()
+my $vis = $input.visible-input-field-string;
+is $vis, $input.left-no-scroll-mark
+          ~ 'a' x $input.available-width
+          ~ $input.right-scroll-mark;
+
+$input.insert-cursor.move-rel(+1);
+is $input.insert-cursor.pos, 1;
+is $input.scroll-cursor.pos, 0;
+
+$input.scroll-to-insert-pos;
+is $input.insert-cursor.pos, 1;
+is $input.scroll-cursor.pos, 0;
+
+$input.scroll-cursor.move-rel(+1);
+is $input.insert-cursor.pos, 1;
+is $input.scroll-cursor.pos, 1;
+
+$vis = $input.visible-input-field-string;
+is $vis, $input.left-scroll-mark
+          ~ 'a' x $input.available-width
+          ~ $input.right-scroll-mark;
+
+$input.edit-move-to-end;
+is $input.insert-cursor.pos, 80;
+is $input.scroll-cursor.pos, 1;
+
+$input.scroll-to-insert-pos;
+is $input.insert-cursor.pos, 80;
+is $input.scroll-cursor.pos, 42;
+
+$vis = $input.visible-input-field-string;
+is $vis, $input.left-scroll-mark
+          ~ 'a' x $input.available-width
+          ~ $input.right-no-scroll-mark;
+
+$input.insert-cursor.move-to(30);
+$input.edit-delete-to-end;
+$input.recompute-widths($input.buffer.contents);
+is $input.insert-cursor.pos, 30;
+is $input.scroll-cursor.pos, 30;
+
+$input.scroll-to-insert-pos;
+is $input.insert-cursor.pos, 30;
+is $input.scroll-cursor.pos, 30;
+
+$vis = $input.visible-input-field-string;
+is $vis, $input.left-scroll-mark
+          ~ ' ' x $input.available-width
+          ~ $input.right-no-scroll-mark;
+
+$input.edit-move-to-start;
+is $input.insert-cursor.pos, 0;
+is $input.scroll-cursor.pos, 30;
+
+$input.scroll-to-insert-pos;
+is $input.insert-cursor.pos, 0;
+is $input.scroll-cursor.pos, 0;
+
+$vis = $input.visible-input-field-string;
+is $vis, $input.left-no-scroll-mark
+          ~ 'a' x 30
+          ~ ' ' x ($input.available-width - 30)
+          ~ $input.right-no-scroll-mark;
+
+
+# render()
+my $rendered = $input.render;
+is $rendered, $input.left-no-scroll-mark
+               ~ 'a' x 30
+               ~ ' ' x ($input.available-width - 30)
+               ~ $input.right-no-scroll-mark;
+
+$rendered = $input.render(:mask('!'));
+is $rendered, $input.left-no-scroll-mark
+               ~ '!' x 30
+               ~ ' ' x ($input.available-width - 30)
+               ~ $input.right-no-scroll-mark;
+
+
+done-testing;
