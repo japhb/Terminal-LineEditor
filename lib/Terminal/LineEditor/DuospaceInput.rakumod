@@ -51,7 +51,12 @@ class Terminal::LineEditor::ScrollingSingleLineInput
     has Str:D $.left-no-scroll-mark  = ' ';
     has Str:D $.right-no-scroll-mark = ' ';
 
-    has $.scroll-cursor = $!buffer.add-cursor;
+    has $.scroll-cursor;
+
+    # Initialize scroll-cursor in TWEAK so buffer is ready
+    submethod TWEAK() {
+        $!scroll-cursor = self.buffer.add-cursor;
+    }
 
 
     #| Determine how much display width is actually available, accounting for
