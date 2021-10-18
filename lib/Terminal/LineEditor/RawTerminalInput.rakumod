@@ -17,6 +17,7 @@ role Terminal::LineEditor::KeyMappable {
     has %.keymap = self.default-keymap;
 
     #| Default key map (from input character ord to edit-* method)
+    #  Largely based on control characters recognized by *nix shells
     method default-keymap() {
         # 0 => '',                       # CTRL-@
           1 => 'move-to-start',          # CTRL-A
@@ -25,9 +26,9 @@ role Terminal::LineEditor::KeyMappable {
           4 => 'abort-or-delete',        # CTRL-D (or delete-char-forward)
           5 => 'move-to-end',            # CTRL-E
           6 => 'move-forward',           # CTRL-F
-          7 => 'abort-modal',            # CTRL-G
+        # 7 => 'abort-modal',            # CTRL-G
           8 => 'delete-char-back',       # CTRL-H
-          9 => 'tab',                    # CTRL-I, TAB
+        # 9 => 'tab',                    # CTRL-I, TAB
          10 => 'finish',                 # CTRL-J, LF
          11 => 'delete-to-end',          # CTRL-K
          12 => 'refresh-all',            # CTRL-L
@@ -45,11 +46,11 @@ role Terminal::LineEditor::KeyMappable {
        # 24 => 'prefix',                 # CTRL-X
          25 => 'yank',                   # CTRL-Y
          26 => 'suspend',                # CTRL-Z
-         27 => 'escape',                 # CTRL-[, ESC
+       # 27 => 'escape',                 # CTRL-[, ESC
        # 28 => 'quit',                   # CTRL-\
        # 29 => '',                       # CTRL-]
        # 30 => '',                       # CTRL-^
-       # 31 => 'undo',                   # CTRL-_
+         31 => 'undo',                   # CTRL-_
         127 => 'delete-char-back',       # CTRL-?, BACKSPACE
           ;
     }
