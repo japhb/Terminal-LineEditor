@@ -429,7 +429,6 @@ role Terminal::LineEditor::SingleLineTextInput {
             my $content = $.buffer.contents;
             ++$cut while $cut < $end && substr($content, $cut, 1) ~~ /\s/;
             ++$cut while $cut < $end && substr($content, $cut, 1) ~~ /\S/;
-            $cut--;
 
             $.buffer.delete($pos, $cut);
         }
@@ -451,7 +450,7 @@ role Terminal::LineEditor::SingleLineTextInput {
 
     ### Insert/Yank/Swap
     method edit-insert-string(Str:D $string --> Bool) {
-        $.buffer.insert($string, $.insert-cursor.pos)
+        $.buffer.insert($.insert-cursor.pos, $string)
     }
 
     method edit-yank(--> Bool) {
