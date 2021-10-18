@@ -56,6 +56,22 @@ arbitrary decisions:
       overlap cursor locations will move them to the end of the replaced text.
 
 
+=head2 Unmapped Functionality
+
+Some of the functionality supported by lower layers of C<Terminal::LineEditor>
+is not exposed in the default keymap of C<Terminal::LineEditor::KeyMappable>.
+This is generally because no commonly-agreed shell keys in the basic control
+code range (codes 0 through 31) map to this functionality.
+
+For example, C<Terminal::LineEditor::SingleLineTextBuffer> can treat replace as
+an atomic operation, but basic POSIX shells generally don't; they instead
+expect the user to delete and insert as separate operations.
+
+That said, if I've missed a commonly-supported key sequence for any of the
+unmapped functionality, please open an issue for this repository with a link to
+the relevant docs so I can expand the default keymap.
+
+
 =head1 AUTHOR
 
 Geoffrey Broadwell <gjb@sonic.net>

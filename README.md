@@ -34,6 +34,15 @@ There are a few edge cases for which `Terminal::LineEditor` chose one of several
 
   * For the same reason as for delete operations, replace operations that overlap cursor locations will move them to the end of the replaced text.
 
+Unmapped Functionality
+----------------------
+
+Some of the functionality supported by lower layers of `Terminal::LineEditor` is not exposed in the default keymap of `Terminal::LineEditor::KeyMappable`. This is generally because no commonly-agreed shell keys in the basic control code range (codes 0 through 31) map to this functionality.
+
+For example, `Terminal::LineEditor::SingleLineTextBuffer` can treat replace as an atomic operation, but basic POSIX shells generally don't; they instead expect the user to delete and insert as separate operations.
+
+That said, if I've missed a commonly-supported key sequence for any of the unmapped functionality, please open an issue for this repository with a link to the relevant docs so I can expand the default keymap.
+
 AUTHOR
 ======
 
