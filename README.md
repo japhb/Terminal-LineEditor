@@ -1,3 +1,5 @@
+[![Actions Status](https://github.com/japhb/Terminal-LineEditor/workflows/test/badge.svg)](https://github.com/japhb/Terminal-LineEditor/actions)
+
 NAME
 ====
 
