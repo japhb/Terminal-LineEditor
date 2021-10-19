@@ -59,17 +59,29 @@ class Terminal::LineEditor::ScrollingSingleLineInput
     }
 
 
-    #| Determine how much display width is actually available, accounting for
-    #| scroll marks; assumes recompute-widths already called
-    method available-width() {
-        my $left-width  = self.char-width($.scroll-cursor.pos
-                                          ?? $.left-scroll-mark
-                                          !! $.left-no-scroll-mark);
-        # XXXX: Assumes worst-case right mark width
-        my $right-width = max(self.char-width($.right-scroll-mark),
-                              self.char-width($.right-no-scroll-mark));
+    #| Determine width of left mark area
+    method left-mark-width() {
+        self.char-width($.scroll-cursor.pos
+                        ?? $.left-scroll-mark
+                        !! $.left-no-scroll-mark)
+    }
 
-        $.display-width - $left-width - $right-width;
+    #| Determine width of right mark area
+    method right-mark-width() {
+        # XXXX: Assumes worst-case right mark width
+        max(self.char-width($.right-scroll-mark),
+            self.char-width($.right-no-scroll-mark))
+    }
+
+    #| Determine how much display width is actually available, accounting for
+    #| scroll marks
+    method available-width() {
+        $.display-width - $.left-mark-width - $.right-mark-width
+    }
+
+    #| Determine display width from scroll point to insert pos
+    method scroll-to-insert-width() {
+        self.substring-width($.scroll-cursor.pos, $.insert-cursor.pos)
     }
 
     #| Make sure input area is scrolled so that insert pos is visible
@@ -80,8 +92,7 @@ class Terminal::LineEditor::ScrollingSingleLineInput
             if $.scroll-cursor.pos > $.insert-cursor.pos;
 
         # If insert-cursor position is off the far end, scroll it into view
-        while self.substring-width($.scroll-cursor.pos, $.insert-cursor.pos)
-            > self.available-width {
+        while self.scroll-to-insert-width > self.available-width {
             $.scroll-cursor.move-rel(+1);
         }
     }
