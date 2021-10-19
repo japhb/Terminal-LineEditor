@@ -105,9 +105,9 @@ class Terminal::LineEditor::ScrollingSingleLineInput
         --$last if self.substring-width($scroll-pos, $last) > $avail;
 
         # Add the determined substring, possibly masked
-        my $contents = $mask.defined ?? $mask x $.insert-cursor.end
-                                     !! $.buffer.contents;
-        $string ~= substr($contents, $scroll-pos, $last - $scroll-pos);
+        $string ~= $mask.defined
+                   ?? $mask x ($last - $scroll-pos)
+                   !! substr($.buffer.contents, $scroll-pos, $last - $scroll-pos);
 
         # Add end padding if necessary
         $string ~= ' ' x ($avail - self.substring-width($scroll-pos, $last));

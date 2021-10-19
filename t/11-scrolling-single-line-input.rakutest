@@ -5,7 +5,7 @@ use Terminal::LineEditor;
 use Terminal::LineEditor::DuospaceInput;
 
 
-plan 51;
+plan 53;
 
 
 # BASICS
@@ -144,6 +144,18 @@ is $rendered, $input.left-no-scroll-mark
                ~ '!' x 30
                ~ ' ' x ($input.available-width - 30)
                ~ $input.right-no-scroll-mark;
+
+$rendered = $input.render(:mask('*?'));
+is $rendered, $input.left-no-scroll-mark
+               ~ '*?' x ($input.available-width div 2)
+               ~ ' '  x ($input.available-width % 2)
+               ~ $input.right-scroll-mark;
+
+$rendered = $input.render(:mask('*?%'));
+is $rendered, $input.left-no-scroll-mark
+               ~ '*?%' x ($input.available-width div 3)
+               ~ ' '   x ($input.available-width % 3)
+               ~ $input.right-scroll-mark;
 
 
 done-testing;
