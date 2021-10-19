@@ -6,6 +6,8 @@
   "build-depends": [
   ],
   "depends": [
+    "Term::termios",
+    "Text::MiscUtils::Layout"
   ],
   "description": "Generalized terminal line editing",
   "license": "Artistic-2.0",
