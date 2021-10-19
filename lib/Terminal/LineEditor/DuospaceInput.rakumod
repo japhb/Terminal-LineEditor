@@ -122,7 +122,6 @@ class Terminal::LineEditor::ScrollingSingleLineInput
     #| Redraw the input field, scrolled so that insert-pos is visible
     method render(Str :$mask, Bool:D :$edited = False) {
         # If an edit just happened, recompute character widths
-        # XXXX: What about mask?
         self.recompute-widths($.buffer.contents, $mask) if $edited || $mask;
 
         # Make sure insert position will be visible

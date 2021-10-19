@@ -17,7 +17,7 @@ role Terminal::LineEditor::KeyMappable {
     has %.keymap = self.default-keymap;
 
     #| Default key map (from input character ord to edit-* method)
-    #  Largely based on control characters recognized by *nix shells
+    #  Largely based on control characters recognized by POSIX-style shells
     method default-keymap() {
         # 0 => '',                       # CTRL-@
           1 => 'move-to-start',          # CTRL-A
@@ -186,7 +186,7 @@ class Terminal::LineEditor::CLIInput
  does Terminal::LineEditor::KeyMappable
  does Terminal::LineEditor::RawModeIO
  does Terminal::LineEditor::RawTerminalUtils {
-    #| Valid special action actions
+    #| Valid special actions
     method special-actions() {
         constant $special
             = set < abort-input abort-or-delete finish literal-next suspend >;
