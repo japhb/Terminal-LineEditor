@@ -155,10 +155,13 @@ role Terminal::LineEditor::RawTerminalUtils {
         $answer
     }
 
-    #| Suspend using SIGTSTP job control, switching back to normal mode first
-    method suspend(:$buffer, :&on-continue) {
-        # Return to normal terminal mode
+    #| Suspend using SIGTSTP job control, switching back to normal mode first;
+    #| call &on-suspend after leaving raw mode just before suspending, and
+    #| call &on-continue just after continuing before re-entering raw mode.
+    method suspend(:$buffer, :&on-suspend, :&on-continue) {
+        # Return to normal terminal mode and call &on-suspend if any
         self.leave-raw-mode;
+        $_() with &on-suspend;
 
         # Send this process SIGTSTP via the native raise() function
         use NativeCall;
