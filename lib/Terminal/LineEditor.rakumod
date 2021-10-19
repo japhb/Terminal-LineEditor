@@ -13,6 +13,20 @@ Terminal::LineEditor - Generalized terminal line editing
 =begin code :lang<raku>
 
 use Terminal::LineEditor;
+use Terminal::LineEditor::RawTerminalInput;
+
+# Create a basic CLI text input object
+my $cli = Terminal::LineEditor::CLIInput.new;
+
+# Prompt for input, supporting common edit commands,
+# scrolling the field to stay on one line
+my $input = $cli.prompt('Please enter your thoughts: ');
+
+# Prompt for a password, masking with asterisks
+my $pass  = $cli.prompt('Password: ', mask => '*');
+
+# Prompt defaults to empty
+my $stuff = $cli.prompt;
 
 
 =end code
@@ -30,6 +44,40 @@ them.  C<Terminal::LineEditor> has a few key design differences:
       replaceable.
 
 =item Useable both directly for simple CLI apps and embedded in TUI interfaces.
+
+
+=head2 Architecture
+
+C<Terminal::LineEditor> is built up in layers, starting from the most abstract:
+
+=item C<EditableBuffer> -- Basic interface role for editable buffers of all sorts
+
+=item C<SingleLineTextBuffer> -- An C<EditableBuffer> that knows how to apply
+      simple insert/delete/replace operations at arbitrary positions/ranges,
+      tracks a yank item (the most recently deleted text), and creates and
+      manages undo/redo information to allow infinite undo
+
+=item C<SingleLineTextBuffer::Cursor> -- A cursor class that knows how to
+      move around within a C<SingleLineTextBuffer> without moving outside the
+      content area, and knows whether edit operations should automatically
+      adjust its position
+
+=item C<SingleLineTextBuffer::WithCursors> -- A wrapper of C<SingleLineTextBuffer>
+      that supports multiple simultaneous cursors, and handles automatically
+      updating them appropriately whenever applying a basic edit operation
+
+=item C<SingleLineTextInput> -- An input field role that tracks its own insert
+      position as an auto-updating cursor, and provides a range of edit methods
+      that operate relative to the current insert position
+
+=item C<ScrollingSingleLineInput> -- A C<SingleLineTextInput> that knows how
+      to scroll within a limited horizontal display width to ensure that the
+      insert position is always visible, no longer how long the input
+
+=item C<CLIInput> -- A driver for C<ScrollingSingleLineInput> that deals with
+      raw terminal I/O, detects terminal size and cursor position, supports a
+      control key map for common edit operations, and handles suspend/resume
+      without corrupting terminal state
 
 
 =head2 Edge Cases

@@ -10,6 +10,20 @@ SYNOPSIS
 
 ```raku
 use Terminal::LineEditor;
+use Terminal::LineEditor::RawTerminalInput;
+
+# Create a basic CLI text input object
+my $cli = Terminal::LineEditor::CLIInput.new;
+
+# Prompt for input, supporting common edit commands,
+# scrolling the field to stay on one line
+my $input = $cli.prompt('Please enter your thoughts: ');
+
+# Prompt for a password, masking with asterisks
+my $pass  = $cli.prompt('Password: ', mask => '*');
+
+# Prompt defaults to empty
+my $stuff = $cli.prompt;
 ```
 
 DESCRIPTION
@@ -22,6 +36,25 @@ DESCRIPTION
   * Features strong separation of concerns; all components are exposed and replaceable.
 
   * Useable both directly for simple CLI apps and embedded in TUI interfaces.
+
+Architecture
+------------
+
+`Terminal::LineEditor` is built up in layers, starting from the most abstract:
+
+  * `EditableBuffer` -- Basic interface role for editable buffers of all sorts
+
+  * `SingleLineTextBuffer` -- An `EditableBuffer` that knows how to apply simple insert/delete/replace operations at arbitrary positions/ranges, tracks a yank item (the most recently deleted text), and creates and manages undo/redo information to allow infinite undo
+
+  * `SingleLineTextBuffer::Cursor` -- A cursor class that knows how to move around within a `SingleLineTextBuffer` without moving outside the content area, and knows whether edit operations should automatically adjust its position
+
+  * `SingleLineTextBuffer::WithCursors` -- A wrapper of `SingleLineTextBuffer` that supports multiple simultaneous cursors, and handles automatically updating them appropriately whenever applying a basic edit operation
+
+  * `SingleLineTextInput` -- An input field role that tracks its own insert position as an auto-updating cursor, and provides a range of edit methods that operate relative to the current insert position
+
+  * `ScrollingSingleLineInput` -- A `SingleLineTextInput` that knows how to scroll within a limited horizontal display width to ensure that the insert position is always visible, no longer how long the input
+
+  * `CLIInput` -- A driver for `ScrollingSingleLineInput` that deals with raw terminal I/O, detects terminal size and cursor position, supports a control key map for common edit operations, and handles suspend/resume without corrupting terminal state
 
 Edge Cases
 ----------
