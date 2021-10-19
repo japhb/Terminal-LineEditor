@@ -55,13 +55,17 @@ role Terminal::LineEditor::KeyMappable {
           ;
     }
 
+    #| Class for instantiating input fields; define in composing class
+    method input-class() { ... }
+
     #| Set of valid special actions; override in a composing class
     method special-actions() { set() }
 
     #| Throw an exception unless $action is a valid edit action
     method ensure-valid-keymap-action(Str:D $action) {
         X::Terminal::LineEditor::UnknownAction.new(:$action).throw
-            unless self.special-actions(){$action} || self.^can("edit-$action");
+            unless self.special-actions(){$action}
+                || $.input-class.^can("edit-$action");
     }
 
     #| Bind a key (by ord) to an edit action (by short string name)
@@ -91,7 +95,7 @@ role Terminal::LineEditor::RawTerminalIO {
     #| Switch input back to normal mode (iff it was switched to raw previously)
     method leave-raw-mode(Bool:D :$nl = True) {
         $!saved-termios.setattr(:DRAIN) if $!saved-termios;
-        $!saved-termios = Any;
+        $!saved-termios = Nil;
         $.output.put('') if $nl;
     }
 
@@ -169,35 +173,36 @@ role Terminal::LineEditor::RawTerminalUtils {
         raise(SIGTSTP);
 
         # Returning from raise(SIGTSTP) means that a SIGCONT has arrived,
-        # so run &on-continue if any, then go back into raw mode and
-        # refresh the displayed edit buffer, offsetting the cursor as needed.
-
+        # so run &on-continue if any, then go back into raw mode
         $_() with &on-continue;
         self.enter-raw-mode;
-
-        # XXXX: BOGUS
-        my $offset-move = $buffer.cursor-move-command(  $buffer.cursor-pos
-                                                      - $buffer.cursor-start);
-        $.output.print($offset-move ~ $buffer.refresh);
     }
 }
 
 
 #| A complete CLI input class
 class Terminal::LineEditor::CLIInput
-   is Terminal::LineEditor::ScrollingSingleLineInput
  does Terminal::LineEditor::KeyMappable
  does Terminal::LineEditor::RawTerminalIO
  does Terminal::LineEditor::RawTerminalUtils {
+    has $.input-class = Terminal::LineEditor::ScrollingSingleLineInput;
+
     #| Valid special actions
     method special-actions() {
         constant $special
             = set < abort-input abort-or-delete finish literal-next suspend >;
     }
 
+    #| VT sequence to move cursor
+    method cursor-move-command(Int:D $distance --> Str:D) {
+        $distance == 0 ?? ''                 !!
+        $distance  > 0 ?? "\e[{ $distance}C" !!
+                          "\e[{-$distance}D" ;
+    }
+
     #| Full input/edit loop; returns final user input or Str if aborted
     # XXXX: Bool:D :$history = False, Str:D :$context = 'default',
-    method read-input(Str :$mask, :&on-continue --> Str) {
+    method read-input(Str :$mask, :&on-suspend, :&on-continue --> Str) {
         # If not a terminal, just read a line from input and return it
         return $.input.get // Str unless $.input.t;
 
@@ -209,19 +214,43 @@ class Terminal::LineEditor::CLIInput
         my ($row,  $col ) = self.detect-cursor-pos // return Str;
         my ($rows, $cols) = self.detect-terminal-size;
 
-        # XXXX: BOGUS
         # Set up an editable input buffer
-        my $buffer = Buffer.new(:cursor-start($col),
-                                :cursor-end($cols // 80),
-                                :$mask);
+        my $display-width = ($cols //= 80) - $col;
+        my $input-field   = $.input-class.new(:$display-width, :$mask);
 
-        # DRY helper
-        my sub do-edit($command, $insert?) {
-            my $edited = $insert ?? $buffer.edit-insert-string($insert)
-                                 !! $buffer."edit-$command"();
-            $.output.print($buffer.refresh($edited));
-            $.output.flush
+        #| Compute full field refresh string, including cursor movements
+        my sub refresh-string(Bool:D $edited) {
+            state $pos = $col;
+
+            # Start by moving screen cursor back to field start
+            my $refresh = self.cursor-move-command($col - $pos);
+
+            # Next, include the input field's self-render
+            $refresh ~= $input-field.render(:$mask, :$edited);
+
+            # Close by moving cursor back to where it belongs
+            $pos      = $col
+                      + $input-field.left-mark-width
+                      + $input-field.scroll-to-insert-width;
+            $refresh ~= self.cursor-move-command($pos - $cols);
+
+            $refresh
         }
+
+        #| DRY helper for resolving edit actions
+        my sub do-edit($command, $insert?) {
+            # Do edit and determine if contents actually changed
+            my $edited = $insert ?? $input-field.edit-insert-string($insert)
+                                 !! $input-field."edit-$command"();
+
+            # Print and flush the full refresh string
+            $.output.print(refresh-string($edited));
+            $.output.flush;
+        }
+
+        # "Prime the pump" by doing a trivial (non-)edit and refreshing the field
+        $input-field.render(:$mask, :edited);
+        do-edit('move-to-end');
 
         # Read raw characters and dispatch either as actions or chars to insert
         my $literal-mode = False;
@@ -234,18 +263,18 @@ class Terminal::LineEditor::CLIInput
             }
             orwith %!keymap{$c.ord} {
                 when 'literal-next'    { $literal-mode = True }
-                when 'suspend'         { self.suspend(:$buffer, :&on-continue) }
+                when 'suspend'         { self.suspend(:&on-suspend, :&on-continue) }
                 when 'finish'          { last }
                 when 'abort-input'     { return Str }
-                when 'abort-or-delete' { return Str unless $buffer.buffer;
+                when 'abort-or-delete' { return Str unless $input-field.buffer.contents;
                                          do-edit('delete-char-forward') }
                 default                { do-edit($_) }
             }
             else { do-edit('insert-string', $c) }
         }
 
-        # Return final buffer
-        $buffer.buffer
+        # Return final buffer contents
+        $input-field.buffer.contents
     }
 
     #| Print and flush prompt then enter input loop, optionally masking password
