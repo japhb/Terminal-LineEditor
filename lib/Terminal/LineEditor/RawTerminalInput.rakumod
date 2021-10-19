@@ -73,7 +73,7 @@ role Terminal::LineEditor::KeyMappable {
 
 
 #| Role for CLIs/TUIs that enter/leave raw terminal mode
-role Terminal::LineEditor::RawModeIO {
+role Terminal::LineEditor::RawTerminalIO {
     has IO::Handle:D $.input  = $*IN;
     has IO::Handle:D $.output = $*OUT;
     has              $!saved-termios;
@@ -184,7 +184,7 @@ role Terminal::LineEditor::RawTerminalUtils {
 class Terminal::LineEditor::CLIInput
    is Terminal::LineEditor::ScrollingSingleLineInput
  does Terminal::LineEditor::KeyMappable
- does Terminal::LineEditor::RawModeIO
+ does Terminal::LineEditor::RawTerminalIO
  does Terminal::LineEditor::RawTerminalUtils {
     #| Valid special actions
     method special-actions() {
