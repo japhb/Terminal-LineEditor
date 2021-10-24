@@ -320,7 +320,7 @@ class Terminal::LineEditor::CLIInput
     #| Clear and replace existing current input field (if any), then create and
     #| draw a new input field
     method replace-input-field(UInt:D :$display-width, UInt:D :$field-start,
-                               Str:D :$contents = '', Str :$mask) {
+                               Str:D :$content = '', Str :$mask) {
         # Output clear string for old field (if any), but don't bother to flush yet
         $.output.print($.input-field.clear-string) if $.input-field;
 
@@ -329,7 +329,7 @@ class Terminal::LineEditor::CLIInput
 
         # "Prime the render pump" and insert initial content
         $.input-field.render(:edited);
-        self.do-edit('insert-string', $contents);
+        self.do-edit('insert-string', $content);
     }
 
     #| Full input/edit loop; returns final user input or Str if aborted
