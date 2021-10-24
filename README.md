@@ -15,15 +15,21 @@ use Terminal::LineEditor::RawTerminalInput;
 # Create a basic CLI text input object
 my $cli = Terminal::LineEditor::CLIInput.new;
 
+# Preload some input history
+$cli.add-history('a previous input', 'another previous input');
+
 # Prompt for input, supporting common edit commands,
 # scrolling the field to stay on one line
 my $input = $cli.prompt('Please enter your thoughts: ');
 
-# Prompt for a password, masking with asterisks
+# Prompt for a password, masking with asterisks (suppresses history)
 my $pass  = $cli.prompt('Password: ', mask => '*');
 
 # Prompt defaults to empty
 my $stuff = $cli.prompt;
+
+# Review history
+.say for $cli.history;
 ```
 
 DESCRIPTION
@@ -54,7 +60,9 @@ Architecture
 
   * `ScrollingSingleLineInput` -- A `SingleLineTextInput` that knows how to scroll within a limited horizontal display width to ensure that the insert position is always visible, no longer how long the input
 
-  * `CLIInput` -- A driver for `ScrollingSingleLineInput` that deals with raw terminal I/O, detects terminal size and cursor position, supports a control key map for common edit operations, and handles suspend/resume without corrupting terminal state
+  * `ScrollingSingleLineInput::ANSI` -- A further extension of `ScrollingSingleLineInput` that is aware of cursor position and movement using ANSI/VT escape codes
+
+  * `CLIInput` -- A driver for `ScrollingSingleLineInput::ANSI` that deals with raw terminal I/O, detects terminal size and cursor position, supports a control key map for common edit operations, and handles suspend/resume without corrupting terminal state
 
 Edge Cases
 ----------
