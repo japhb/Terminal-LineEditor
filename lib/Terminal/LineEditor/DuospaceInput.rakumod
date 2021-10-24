@@ -51,7 +51,9 @@ class Terminal::LineEditor::ScrollingSingleLineInput
     has Str:D $.left-no-scroll-mark  = ' ';
     has Str:D $.right-no-scroll-mark = ' ';
 
+    has Str $.mask;
     has $.scroll-cursor;
+
 
     # Initialize scroll-cursor in TWEAK so buffer is ready
     submethod TWEAK() {
@@ -98,7 +100,7 @@ class Terminal::LineEditor::ScrollingSingleLineInput
     }
 
     #| Compute a string containing entire visible input field (including scroll marks)
-    method visible-input-field-string(Str $mask?) {
+    method visible-input-field-string() {
         # Add correct (no-)scroll-mark on left end
         my $scroll-pos = $.scroll-cursor.pos;
         my $string     = $scroll-pos ?? $.left-scroll-mark !! $.left-no-scroll-mark;
@@ -116,8 +118,8 @@ class Terminal::LineEditor::ScrollingSingleLineInput
         --$last if self.substring-width($scroll-pos, $last) > $avail;
 
         # Add the determined substring, possibly masked
-        $string ~= $mask.defined
-                   ?? $mask x ($last - $scroll-pos)
+        $string ~= $.mask.defined
+                   ?? $.mask x ($last - $scroll-pos)
                    !! substr($.buffer.contents, $scroll-pos, $last - $scroll-pos);
 
         # Add end padding if necessary
@@ -131,13 +133,14 @@ class Terminal::LineEditor::ScrollingSingleLineInput
     }
 
     #| Redraw the input field, scrolled so that insert-pos is visible
-    method render(Str :$mask, Bool:D :$edited = False) {
+    method render(Bool:D :$edited = False) {
         # If an edit just happened, recompute character widths
-        self.recompute-widths($.buffer.contents, $mask) if $edited || $mask;
+        self.recompute-widths($.buffer.contents, $.mask)
+            if $edited || $.mask.defined;
 
         # Make sure insert position will be visible
         self.scroll-to-insert-pos;
 
-        self.visible-input-field-string($mask)
+        self.visible-input-field-string
     }
 }

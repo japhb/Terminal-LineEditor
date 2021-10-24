@@ -5,7 +5,7 @@ use Terminal::LineEditor;
 use Terminal::LineEditor::DuospaceInput;
 
 
-plan 53;
+plan 54;
 
 
 # BASICS
@@ -139,23 +139,33 @@ is $rendered, $input.left-no-scroll-mark
                ~ ' ' x ($input.available-width - 30)
                ~ $input.right-no-scroll-mark;
 
-$rendered = $input.render(:mask('!'));
-is $rendered, $input.left-no-scroll-mark
-               ~ '!' x 30
-               ~ ' ' x ($input.available-width - 30)
-               ~ $input.right-no-scroll-mark;
+# Masked render()
+sub test-masked-render(Str:D $mask) {
+    my $class  = Terminal::LineEditor::ScrollingSingleLineInput;
+    my $field  = $class.new(:display-width(40), :$mask);
 
-$rendered = $input.render(:mask('*?'));
-is $rendered, $input.left-no-scroll-mark
-               ~ '*?' x ($input.available-width div 2)
-               ~ ' '  x ($input.available-width % 2)
-               ~ $input.right-scroll-mark;
+    $field.edit-insert-string('a' x 30);
+    $field.edit-move-to-start;
+    my $render = $field.render;
 
-$rendered = $input.render(:mask('*?%'));
-is $rendered, $input.left-no-scroll-mark
-               ~ '*?%' x ($input.available-width div 3)
-               ~ ' '   x ($input.available-width % 3)
-               ~ $input.right-scroll-mark;
+    my $expect;
+    if $mask.chars <= 1 {
+        $expect = $field.left-no-scroll-mark
+                ~ $mask x 30
+                ~ ' '   x ($field.available-width - ($mask x 30).chars)
+                ~ $input.right-no-scroll-mark;
+    }
+    else {
+        $expect = $field.left-no-scroll-mark
+                ~ $mask x ($field.available-width div $mask.chars)
+                ~ ' '   x ($field.available-width  %  $mask.chars)
+                ~ $input.right-scroll-mark;
+    }
+
+    is $render, $expect;
+}
+
+test-masked-render($_) for '', '!', '*?', '*?%';
 
 
 done-testing;
