@@ -181,7 +181,8 @@ role Terminal::LineEditor::RawTerminalUtils {
 
 
 #| A ScrollingSingleLineInput enhanced with ANSI/VT cursor control knowledge
-class Terminal::LineEditor::ScrollingSingleLineInput::ANSI {
+class Terminal::LineEditor::ScrollingSingleLineInput::ANSI
+   is Terminal::LineEditor::ScrollingSingleLineInput {
     has UInt:D $.field-start is required;
     has UInt:D $.field-end   = $!field-start + self.display-width;
     has UInt:D $.pos         = $!field-start;
@@ -226,8 +227,8 @@ class Terminal::LineEditor::ScrollingSingleLineInput::ANSI {
     #| Resolve an edit action and compute a new refresh string
     method do-edit($action, $insert?) {
         # Do edit and determine if contents actually changed
-        my $edited = $insert ?? self.edit-insert-string($insert)
-                             !! self."edit-$action"();
+        my $edited = $insert.defined ?? self.edit-insert-string($insert)
+                                     !! self."edit-$action"();
 
         self.refresh-string($edited)
     }
