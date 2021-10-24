@@ -1,4 +1,16 @@
 Revision history for Terminal-LineEditor
 
+0.0.2  2021-10-23
+  [Docs]
+  - Expand/improve README
+
+  [Functionality]
+  - Support basic input history add/prev/next
+
+  [Refactoring]
+  - Major refactoring of RawTerminalInput module, including factoring out
+    Terminal::LineEditor::ScrollingSingleLineInput::ANSI class
+
+
 0.0.1  2021-10-18
   - Initial version, first green build
