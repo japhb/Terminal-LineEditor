@@ -180,12 +180,67 @@ role Terminal::LineEditor::RawTerminalUtils {
 }
 
 
+#| A ScrollingSingleLineInput enhanced with ANSI/VT cursor control knowledge
+class Terminal::LineEditor::ScrollingSingleLineInput::ANSI {
+    has UInt:D $.field-start is required;
+    has UInt:D $.field-end   = $!field-start + self.display-width;
+    has UInt:D $.pos         = $!field-start;
+
+
+    #| ANSI VT sequence to move cursor
+    method cursor-move-command(Int:D $distance --> Str:D) {
+        $distance == 0 ?? ''                 !!
+        $distance  > 0 ?? "\e[{ $distance}C" !!
+                          "\e[{-$distance}D" ;
+    }
+
+    #| Compute a string to clear the current field, including cursor movement
+    method clear-string() {
+        # Start by moving screen cursor back to field start
+        my $clear = self.cursor-move-command($.field-start - $.pos);
+
+        # Draw plain spaces to cover display-width;
+        $clear ~= ' ' x $.display-width;
+
+        # Close by moving cursor back to start
+        $clear ~= self.cursor-move-command($.field-start - $.field-end);
+    }
+
+    #| Compute full field refresh string, including cursor movements
+    method refresh-string(Bool:D $edited) {
+        # Start by moving screen cursor back to field start
+        my $refresh = self.cursor-move-command($.field-start - $.pos);
+
+        # Next, include our self-render
+        $refresh ~= self.render(:$edited);
+
+        # Close by moving cursor back to where it belongs
+        $!pos     = $.field-start
+                  + self.left-mark-width
+                  + self.scroll-to-insert-width;
+        $refresh ~= self.cursor-move-command($.pos - $.field-end);
+
+        $refresh
+    }
+
+    #| Resolve an edit action and compute a new refresh string
+    method do-edit($action, $insert?) {
+        # Do edit and determine if contents actually changed
+        my $edited = $insert ?? self.edit-insert-string($insert)
+                             !! self."edit-$action"();
+
+        self.refresh-string($edited)
+    }
+}
+
+
 #| A complete CLI input class
 class Terminal::LineEditor::CLIInput
  does Terminal::LineEditor::KeyMappable
  does Terminal::LineEditor::RawTerminalIO
  does Terminal::LineEditor::RawTerminalUtils {
-    has $.input-class = Terminal::LineEditor::ScrollingSingleLineInput;
+    has $.input-class = Terminal::LineEditor::ScrollingSingleLineInput::ANSI;
+    has $.input-field;
 
     #| Valid special actions
     method special-actions() {
@@ -193,11 +248,25 @@ class Terminal::LineEditor::CLIInput
             = set < abort-input abort-or-delete finish literal-next suspend >;
     }
 
-    #| VT sequence to move cursor
-    method cursor-move-command(Int:D $distance --> Str:D) {
-        $distance == 0 ?? ''                 !!
-        $distance  > 0 ?? "\e[{ $distance}C" !!
-                          "\e[{-$distance}D" ;
+    #| Do edit in current input field, then print and flush the full refresh string
+    method do-edit($action, $insert?) {
+        $.output.print($.input-field.do-edit($action, $insert));
+        $.output.flush;
+    }
+
+    #| Clear and replace existing current input field (if any), then create and
+    #| draw a new input field
+    method replace-input-field(UInt:D :$display-width, UInt:D :$field-start,
+                               Str:D :$contents = '', Str :$mask) {
+        # Output clear string for old field (if any), but don't bother to flush yet
+        $.output.print($.input-field.clear-string) if $.input-field;
+
+        # Create a new input field using the new metrics
+        $!input-field = $.input-class.new(:$display-width, :$field-start, :$mask);
+
+        # "Prime the render pump" and insert initial content
+        $.input-field.render(:edited);
+        self.do-edit('insert-string', $contents);
     }
 
     #| Full input/edit loop; returns final user input or Str if aborted
@@ -216,41 +285,7 @@ class Terminal::LineEditor::CLIInput
 
         # Set up an editable input buffer
         my $display-width = ($cols //= 80) - $col;
-        my $input-field   = $.input-class.new(:$display-width, :$mask);
-
-        #| Compute full field refresh string, including cursor movements
-        my sub refresh-string(Bool:D $edited) {
-            state $pos = $col;
-
-            # Start by moving screen cursor back to field start
-            my $refresh = self.cursor-move-command($col - $pos);
-
-            # Next, include the input field's self-render
-            $refresh ~= $input-field.render(:$mask, :$edited);
-
-            # Close by moving cursor back to where it belongs
-            $pos      = $col
-                      + $input-field.left-mark-width
-                      + $input-field.scroll-to-insert-width;
-            $refresh ~= self.cursor-move-command($pos - $cols);
-
-            $refresh
-        }
-
-        #| DRY helper for resolving edit actions
-        my sub do-edit($command, $insert?) {
-            # Do edit and determine if contents actually changed
-            my $edited = $insert ?? $input-field.edit-insert-string($insert)
-                                 !! $input-field."edit-$command"();
-
-            # Print and flush the full refresh string
-            $.output.print(refresh-string($edited));
-            $.output.flush;
-        }
-
-        # "Prime the pump" by doing a trivial (non-)edit and refreshing the field
-        $input-field.render(:$mask, :edited);
-        do-edit('move-to-end');
+        self.replace-input-field(:$display-width, :field-start($col), :$mask);
 
         # Read raw characters and dispatch either as actions or chars to insert
         my $literal-mode = False;
@@ -258,7 +293,7 @@ class Terminal::LineEditor::CLIInput
             my $c = self.read-raw-char // last;
 
             if $literal-mode {
-                do-edit('insert-string', $c);
+                self.do-edit('insert-string', $c);
                 $literal-mode = False;
             }
             orwith %!keymap{$c.ord} {
@@ -266,15 +301,15 @@ class Terminal::LineEditor::CLIInput
                 when 'suspend'         { self.suspend(:&on-suspend, :&on-continue) }
                 when 'finish'          { last }
                 when 'abort-input'     { return Str }
-                when 'abort-or-delete' { return Str unless $input-field.buffer.contents;
-                                         do-edit('delete-char-forward') }
-                default                { do-edit($_) }
+                when 'abort-or-delete' { return Str unless $.input-field.buffer.contents;
+                                         self.do-edit('delete-char-forward') }
+                default                { self.do-edit($_) }
             }
-            else { do-edit('insert-string', $c) }
+            else { self.do-edit('insert-string', $c) }
         }
 
         # Return final buffer contents
-        $input-field.buffer.contents
+        $.input-field.buffer.contents
     }
 
     #| Print and flush prompt then enter input loop, optionally masking password
