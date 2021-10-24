@@ -33,9 +33,9 @@ role Terminal::LineEditor::KeyMappable {
          11 => 'delete-to-end',          # CTRL-K
          12 => 'refresh-all',            # CTRL-L
          13 => 'finish',                 # CTRL-M, CR
-       # 14 => 'history-next',           # CTRL-N
+         14 => 'history-next',           # CTRL-N
        # 15 => '',                       # CTRL-O
-       # 16 => 'history-prev',           # CTRL-P
+         16 => 'history-prev',           # CTRL-P
        # 17 => '',                       # CTRL-Q
        # 18 => 'history-reverse-search', # CTRL-R
        # 19 => 'history-forward-search', # CTRL-S
@@ -299,6 +299,7 @@ class Terminal::LineEditor::ScrollingSingleLineInput::ANSI
 
 #| A complete CLI input class
 class Terminal::LineEditor::CLIInput
+ does Terminal::LineEditor::HistoryTracking
  does Terminal::LineEditor::KeyMappable
  does Terminal::LineEditor::RawTerminalIO
  does Terminal::LineEditor::RawTerminalUtils {
@@ -308,7 +309,8 @@ class Terminal::LineEditor::CLIInput
     #| Valid special actions
     method special-actions() {
         constant $special
-            = set < abort-input abort-or-delete finish literal-next suspend >;
+            = set < abort-input abort-or-delete finish
+                    history-next history-prev literal-next suspend >;
     }
 
     #| Do edit in current input field, then print and flush the full refresh string
@@ -342,6 +344,12 @@ class Terminal::LineEditor::CLIInput
               self.enter-raw-mode;
         LEAVE self.leave-raw-mode;
 
+        # Clear temporaries when leaving
+        LEAVE {
+            $!unfinished-entry = '';
+            $!input-field = Nil;
+        }
+
         # Detect current cursor position and terminal size
         my ($row,  $col ) = self.detect-cursor-pos // return Str;
         my ($rows, $cols) = self.detect-terminal-size;
@@ -349,6 +357,25 @@ class Terminal::LineEditor::CLIInput
         # Set up an editable input buffer
         my $display-width = ($cols //= 80) - $col;
         self.replace-input-field(:$display-width, :field-start($col), :$mask);
+
+        my sub do-history-prev() {
+            return unless @.history && $.history-cursor && !$mask.defined;
+
+            $!unfinished-entry = $.input-field.buffer.contents
+                if self.history-cursor-at-end;
+
+            self.history-prev;
+            self.replace-input-field(:$display-width, :field-start($col),
+                                     :$mask, :content(self.history-entry));
+        }
+
+        my sub do-history-next() {
+            return if self.history-cursor-at-end || $mask.defined;
+
+            self.history-next;
+            self.replace-input-field(:$display-width, :field-start($col),
+                                     :$mask, :content(self.history-entry));
+        }
 
         # Read raw characters and dispatch either as actions or chars to insert
         my $literal-mode = False;
@@ -361,6 +388,8 @@ class Terminal::LineEditor::CLIInput
             }
             orwith %!keymap{$c.ord} {
                 when 'literal-next'    { $literal-mode = True }
+                when 'history-prev'    { do-history-prev }
+                when 'history-next'    { do-history-next }
                 when 'suspend'         { self.suspend(:&on-suspend, :&on-continue) }
                 when 'finish'          { last }
                 when 'abort-input'     { return Str }
