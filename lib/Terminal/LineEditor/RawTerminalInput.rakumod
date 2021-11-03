@@ -249,18 +249,12 @@ role Terminal::LineEditor::RawTerminalIO {
 
     #| Switch input back to normal mode iff it was switched to raw previously
     method leave-raw-mode(Bool:D :$nl = True) {
-        # Mark parsing done, indicate a break in input parsing (to output any
-        # partial sequences and flush the parser to Ground state), drain
-        # output, restore the saved termios state, mark the saved termios as
-        # unused, and optionally output a \n to push the cursor to the start of
-        # the next line
+        # Mark parsing done, drain output, restore the saved termios state,
+        # mark the saved termios as unused, and optionally output a \n to push
+        # the cursor to the start of the next line
 
         if $!saved-termios {
-            unless ⚛$!done {
-                $!done ⚛= 1;
-                $!parse(Nil);
-            }
-
+            $!done ⚛= 1;
             $!saved-termios.setattr(:DRAIN);
             $!saved-termios = Nil;
             $.output.put('') if $nl;
@@ -539,6 +533,12 @@ class Terminal::LineEditor::ScrollingSingleLineInput::ANSI
                           "\e[{-$distance}D" ;
     }
 
+    #| Force the virtual cursor pos to field-start, WITHOUT moving it;
+    #| this allows recovery from suspend/continue
+    method force-pos-to-start() {
+        $!pos = $!field-start;
+    }
+
     #| Compute a string to clear the current field, including cursor movement
     method clear-string() {
         # Start by moving screen cursor back to field start
@@ -714,7 +714,9 @@ class Terminal::LineEditor::CLIInput
                     when 'literal-next'    { $literal-mode = True }
                     when 'history-prev'    { do-history-prev }
                     when 'history-next'    { do-history-next }
-                    when 'suspend'         { self.suspend(:&on-suspend, :&on-continue) }
+                    when 'suspend'         { self.suspend(:&on-suspend, :&on-continue);
+                                             $.input-field.force-pos-to-start;
+                                             self.do-edit('insert-string', ''); }
                     when 'finish'          { self.set-done; done }
                     when 'abort-input'     { self.set-done; $aborted = True; done }
                     when 'abort-or-delete' { unless $.input-field.buffer.contents {
