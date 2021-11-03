@@ -229,12 +229,12 @@ role Terminal::LineEditor::RawTerminalIO {
         # previous I/O, and convert TTY to raw mode
 
         if $.input.t && !$!saved-termios {
-            $!done ⚛= 0;
-            self.start-parser;
-
             my $fd = $.input.native-descriptor;
             $!saved-termios = Term::termios.new(:$fd).getattr;
             Term::termios.new(:$fd).getattr.makeraw.setattr(:FLUSH);
+
+            $!done ⚛= 0;
+            self.start-parser;
         }
     }
 
@@ -276,12 +276,13 @@ role Terminal::LineEditor::RawTerminalIO {
             my buf8 $buf .= new;
             whenever $!raw-supply {
                 when !*.defined {
+                    $buf .= new;
                     $!dec-supplier.emit($_);
                 }
                 when Int {
                     $buf.push($_);
                     try my $c = $buf.decode;
-                    if $c { $!dec-supplier.emit($c); $buf .= new }
+                    if $c { $buf .= new; $!dec-supplier.emit($c) }
                 }
                 when Terminal::ANSIParser::SimpleEscape {
                     # No params possible, so just look up full decoded sequence
