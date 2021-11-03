@@ -626,7 +626,6 @@ class Terminal::LineEditor::CLIInput
         }
 
         # Detect current cursor position and terminal size
-        my @pending;
         my ($row, $col, $rows, $cols);
         react {
             whenever self.detect-cursor-pos {
