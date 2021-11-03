@@ -17,42 +17,50 @@ class X::Terminal::LineEditor::UnknownAction is X::Terminal::LineEditor {
 role Terminal::LineEditor::KeyMappable {
     has %.keymap = self.default-keymap;
 
-    #| Default key map (from input character ord to edit-* method)
+    #| Default key map (from input character name to edit-* method)
     #  Largely based on control characters recognized by POSIX-style shells
     method default-keymap() {
-        # 0 => '',                       # CTRL-@, CTRL-SPACE
-          1 => 'move-to-start',          # CTRL-A
-          2 => 'move-back',              # CTRL-B
-          3 => 'abort-input',            # CTRL-C
-          4 => 'abort-or-delete',        # CTRL-D (or delete-char-forward)
-          5 => 'move-to-end',            # CTRL-E
-          6 => 'move-forward',           # CTRL-F
-        # 7 => 'abort-modal',            # CTRL-G
-          8 => 'delete-char-back',       # CTRL-H
-        # 9 => 'tab',                    # CTRL-I, TAB
-         10 => 'finish',                 # CTRL-J, LF
-         11 => 'delete-to-end',          # CTRL-K
-         12 => 'refresh-all',            # CTRL-L
-         13 => 'finish',                 # CTRL-M, CR
-         14 => 'history-next',           # CTRL-N
-       # 15 => '',                       # CTRL-O
-         16 => 'history-prev',           # CTRL-P
-       # 17 => '',                       # CTRL-Q
-       # 18 => 'history-reverse-search', # CTRL-R
-       # 19 => 'history-forward-search', # CTRL-S
-         20 => 'swap-chars',             # CTRL-T
-         21 => 'delete-to-start',        # CTRL-U
-         22 => 'literal-next',           # CTRL-V
-         23 => 'delete-word-back',       # CTRL-W
-       # 24 => 'prefix',                 # CTRL-X
-         25 => 'yank',                   # CTRL-Y
-         26 => 'suspend',                # CTRL-Z
-       # 27 => 'escape',                 # CTRL-[, ESC
-       # 28 => 'quit',                   # CTRL-\
-       # 29 => '',                       # CTRL-]
-       # 30 => '',                       # CTRL-^
-         31 => 'undo',                   # CTRL-_
-        127 => 'delete-char-back',       # CTRL-?, BACKSPACE
+       #  Ctrl-@  => '',                       # CTRL-@, CTRL-SPACE
+          Ctrl-A  => 'move-to-start',          # CTRL-A
+          Ctrl-B  => 'move-back',              # CTRL-B
+          Ctrl-C  => 'abort-input',            # CTRL-C
+          Ctrl-D  => 'abort-or-delete',        # CTRL-D (or delete-char-forward)
+          Ctrl-E  => 'move-to-end',            # CTRL-E
+          Ctrl-F  => 'move-forward',           # CTRL-F
+       #  Ctrl-G  => 'abort-modal',            # CTRL-G
+          Ctrl-H  => 'delete-char-back',       # CTRL-H
+       #  Ctrl-I  => 'tab',                    # CTRL-I, TAB
+          Ctrl-J  => 'finish',                 # CTRL-J, LF
+          Ctrl-K  => 'delete-to-end',          # CTRL-K
+          Ctrl-L  => 'refresh-all',            # CTRL-L
+          Ctrl-M  => 'finish',                 # CTRL-M, CR
+          Ctrl-N  => 'history-next',           # CTRL-N
+       #  Ctrl-O  => '',                       # CTRL-O
+          Ctrl-P  => 'history-prev',           # CTRL-P
+       #  Ctrl-Q  => '',                       # CTRL-Q
+       #  Ctrl-R  => 'history-reverse-search', # CTRL-R
+       #  Ctrl-S  => 'history-forward-search', # CTRL-S
+          Ctrl-T  => 'swap-chars',             # CTRL-T
+          Ctrl-U  => 'delete-to-start',        # CTRL-U
+          Ctrl-V  => 'literal-next',           # CTRL-V
+          Ctrl-W  => 'delete-word-back',       # CTRL-W
+       #  Ctrl-X  => 'prefix',                 # CTRL-X
+          Ctrl-Y  => 'yank',                   # CTRL-Y
+          Ctrl-Z  => 'suspend',                # CTRL-Z
+       # 'Ctrl-[' => 'escape',                 # CTRL-[, ESC
+       # 'Ctrl-\' => 'quit',                   # CTRL-\
+       # 'Ctrl-]' => '',                       # CTRL-]
+       # 'Ctrl-^' => '',                       # CTRL-^
+         'Ctrl-_' => 'undo',                   # CTRL-_
+
+         Backspace   => 'delete-char-back',    # CTRL-?, BACKSPACE
+
+         CursorLeft  => 'move-back',
+         CursorRight => 'move-forward',
+         CursorHome  => 'move-to-start',
+         CursorEnd   => 'move-to-end',
+         CursorUp    => 'history-prev',
+         CursorDown  => 'history-next',
           ;
     }
 
@@ -69,10 +77,11 @@ role Terminal::LineEditor::KeyMappable {
                 || $.input-class.^can("edit-$action");
     }
 
-    #| Bind a key (by ord) to an edit action (by short string name)
-    method bind-key(UInt:D $ord, Str:D $action) {
+    #| Bind a key (by name) to an edit action (by short string name);
+    #| modifiers are represented by prefixed Meta-/Ctrl-/Alt-/Shift-
+    method bind-key(Str:D $key-name, Str:D $action) {
         self.ensure-valid-keymap-action($action);
-        %!keymap{$ord} = $action;
+        %!keymap{$key-name} = $action;
     }
 }
 
@@ -300,7 +309,7 @@ role Terminal::LineEditor::RawTerminalIO {
                     # is a query response and return that to the waiting query
                     my regex csi { ^ ("\e["|\x[9B]) (<-[;0..9]>*) (<[;0..9]>*) (.+) $ };
                     if .sequence.decode ~~ &csi {
-                        my @args = split ';', ~$2;
+                        my @args = ~$2 ?? split(';', ~$2) !! Empty;
                         my $lead = "\e[$1";
                         my $tail = ~$3;
 
@@ -323,6 +332,9 @@ role Terminal::LineEditor::RawTerminalIO {
                             else {
                                 !!! "Unrecognized CSI resembling special key"
                             }
+                        }
+                        elsif !@args && %special-keys{$lead ~ $tail} -> $key {
+                            $!dec-supplier.emit($key);
                         }
                         elsif @!active-queries
                            && .sequence.decode ~~ @!active-queries[0].matcher {
@@ -663,29 +675,57 @@ class Terminal::LineEditor::CLIInput
         # Read raw characters and dispatch either as actions or chars to insert
         my $literal-mode = False;
         my $aborted      = False;
-        react whenever $.decoded -> $c {
-            done unless $c.defined;
+        react whenever $.decoded {
+            done unless .defined;
 
             if $literal-mode {
-                self.do-edit('insert-string', $c);
+                self.do-edit('insert-string', $_);
                 $literal-mode = False;
             }
-            orwith %!keymap{$c.ord} {
-                when 'literal-next'    { $literal-mode = True }
-                when 'history-prev'    { do-history-prev }
-                when 'history-next'    { do-history-next }
-                when 'suspend'         { self.suspend(:&on-suspend, :&on-continue) }
-                when 'finish'          { self.set-done; done }
-                when 'abort-input'     { self.set-done; $aborted = True; done }
-                when 'abort-or-delete' { unless $.input-field.buffer.contents {
-                                             self.set-done;
-                                             $aborted = True;
-                                             done
-                                         }
-                                         self.do-edit('delete-char-forward') }
-                default                { self.do-edit($_) }
+            else {
+                my $key;
+                when Str {
+                    my $ord = .ord;
+                    if $ord < 32 {
+                        $key = 'Ctrl-' ~ ($ord + 64).chr;
+                        proceed;
+                    }
+                    elsif $ord == 127 {
+                        $key = 'Backspace';
+                        proceed;
+                    }
+                    else {
+                        self.do-edit('insert-string', $_);
+                    }
+                }
+                when SpecialKey {
+                    $key = ~$_;
+                    proceed;
+                }
+                when ModifiedSpecialKey {
+                    $key = ('Meta-'  if .meta)
+                         ~ ('Ctrl-'  if .control)
+                         ~ ('Alt-'   if .alt)
+                         ~ ('Shift-' if .shift)
+                         ~ .key;
+                    proceed;
+                }
+                with $key && %!keymap{$key} {
+                    when 'literal-next'    { $literal-mode = True }
+                    when 'history-prev'    { do-history-prev }
+                    when 'history-next'    { do-history-next }
+                    when 'suspend'         { self.suspend(:&on-suspend, :&on-continue) }
+                    when 'finish'          { self.set-done; done }
+                    when 'abort-input'     { self.set-done; $aborted = True; done }
+                    when 'abort-or-delete' { unless $.input-field.buffer.contents {
+                                                   self.set-done;
+                                                   $aborted = True;
+                                                   done
+                                               }
+                                             self.do-edit('delete-char-forward') }
+                    default                { self.do-edit($_) }
+                }
             }
-            else { self.do-edit('insert-string', $c) }
         }
 
         # Return final buffer contents (or Str if aborted)
