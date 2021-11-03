@@ -12,11 +12,16 @@ Terminal::LineEditor - Generalized terminal line editing
 
 =begin code :lang<raku>
 
+### PREP
+
 use Terminal::LineEditor;
 use Terminal::LineEditor::RawTerminalInput;
 
 # Create a basic CLI text input object
 my $cli = Terminal::LineEditor::CLIInput.new;
+
+
+### BASICS
 
 # Preload some input history
 $cli.add-history('a previous input', 'another previous input');
@@ -33,6 +38,23 @@ my $stuff = $cli.prompt;
 
 # Review history
 .say for $cli.history;
+
+
+### TYPICAL USE
+
+loop {
+    # Get user's input
+    my $in = $cli.prompt("My prompt >");
+
+    # Exit loop if user indicated finished
+    last without $in;
+
+    # Add line to history if it is non-empty
+    $cli.add-history($in) if $in.trim;
+
+    # Do something with the input line; here we just echo it
+    say $in;
+}
 
 
 =end code
