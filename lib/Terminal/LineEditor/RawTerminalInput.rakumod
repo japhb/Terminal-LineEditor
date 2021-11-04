@@ -278,6 +278,7 @@ role Terminal::LineEditor::RawTerminalIO {
         start react {
             my buf8 $buf .= new;
             whenever $!raw-supply {
+                # note "Got {.raku}";
                 when !*.defined {
                     $buf .= new;
                     $!dec-supplier.emit($_);
@@ -290,7 +291,12 @@ role Terminal::LineEditor::RawTerminalIO {
                 when Terminal::ANSIParser::SimpleEscape {
                     # No params possible, so just look up full decoded sequence
                     # (which is implicitly utf-8 decoded when stringified)
-                    with %special-keys{$_} -> $key {
+                    my $decoded = ~$_;
+                    with %special-keys{$decoded} -> $key {
+                        $!dec-supplier.emit($key => $_);
+                    }
+                    elsif $decoded.chars == 2 {
+                        my $key = 'Alt-' ~ $decoded.substr(1);
                         $!dec-supplier.emit($key => $_);
                     }
                     else {
@@ -701,6 +707,9 @@ class Terminal::LineEditor::CLIInput
                 }
                 when Pair {
                     given .key {
+                        when Str {
+                            $key = $_;
+                        }
                         when SpecialKey {
                             $key = ~$_;
                         }
