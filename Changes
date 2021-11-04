@@ -1,5 +1,17 @@
 Revision history for Terminal-LineEditor
 
+0.0.3  2021-11-03
+  [Docs]
+  - Add TYPICAL USE subsection to SYNOPSIS
+
+  [Functionality]
+  - Support mapping arbitrary special keys
+  - Map cursor keys, in addition to previously supported C0 control keys
+
+  [Refactoring]
+  - Rebase input stream parsing on Terminal::ANSIParser
+
+
 0.0.2  2021-10-23
   [Docs]
   - Expand/improve README
