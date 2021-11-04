@@ -1,5 +1,10 @@
 Revision history for Terminal-LineEditor
 
+0.0.4  *WIP*
+  [Functionality]
+  - Support mapping Alt-[normal key], though none mapped yet
+
+
 0.0.3  2021-11-03
   [Docs]
   - Add TYPICAL USE subsection to SYNOPSIS
