@@ -19,6 +19,7 @@
     "Terminal::LineEditor::Core": "lib/Terminal/LineEditor/Core.rakumod",
     "Terminal::LineEditor::DuospaceInput": "lib/Terminal/LineEditor/DuospaceInput.rakumod",
     "Terminal::LineEditor::EditableBuffer": "lib/Terminal/LineEditor/EditableBuffer.rakumod",
+    "Terminal::LineEditor::History": "lib/Terminal/LineEditor/History.rakumod",
     "Terminal::LineEditor::RawTerminalInput": "lib/Terminal/LineEditor/RawTerminalInput.rakumod"
   },
   "resources": [
