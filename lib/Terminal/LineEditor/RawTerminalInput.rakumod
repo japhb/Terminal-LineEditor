@@ -291,7 +291,7 @@ role Terminal::LineEditor::RawTerminalIO {
                     # No params possible, so just look up full decoded sequence
                     # (which is implicitly utf-8 decoded when stringified)
                     with %special-keys{$_} -> $key {
-                        $!dec-supplier.emit($key);
+                        $!dec-supplier.emit($key => $_);
                     }
                     else {
                         !!! "Unknown SimpleEscape"
@@ -312,12 +312,12 @@ role Terminal::LineEditor::RawTerminalIO {
                             my $base = $lead ~ @args[0] ~ $tail;
                             with %special-keys{$base} -> $key {
                                 if    @args == 1 {
-                                    $!dec-supplier.emit($key);
+                                    $!dec-supplier.emit($key => $_);
                                 }
                                 elsif @args == 2 {
                                     my $modifiers = @args[1] - 1;
                                     $!dec-supplier.emit:
-                                        ModifiedSpecialKey.new(:$key, :$modifiers);
+                                        ModifiedSpecialKey.new(:$key, :$modifiers) => $_;
                                 }
                                 else {
                                     !!! "Unrecognized special key format"
@@ -328,7 +328,7 @@ role Terminal::LineEditor::RawTerminalIO {
                             }
                         }
                         elsif !@args && %special-keys{$lead ~ $tail} -> $key {
-                            $!dec-supplier.emit($key);
+                            $!dec-supplier.emit($key => $_);
                         }
                         elsif @!active-queries
                            && .sequence.decode ~~ @!active-queries[0].matcher {
@@ -679,7 +679,8 @@ class Terminal::LineEditor::CLIInput
             done unless .defined;
 
             if $literal-mode {
-                self.do-edit('insert-string', $_);
+                my $string = $_ ~~ Str ?? $_ !! ~(.value);
+                self.do-edit('insert-string', $string);
                 $literal-mode = False;
             }
             else {
@@ -698,16 +699,19 @@ class Terminal::LineEditor::CLIInput
                         self.do-edit('insert-string', $_);
                     }
                 }
-                when SpecialKey {
-                    $key = ~$_;
-                    proceed;
-                }
-                when ModifiedSpecialKey {
-                    $key = ('Meta-'  if .meta)
-                         ~ ('Ctrl-'  if .control)
-                         ~ ('Alt-'   if .alt)
-                         ~ ('Shift-' if .shift)
-                         ~ .key;
+                when Pair {
+                    given .key {
+                        when SpecialKey {
+                            $key = ~$_;
+                        }
+                        when ModifiedSpecialKey {
+                            $key = ('Meta-'  if .meta)
+                                 ~ ('Ctrl-'  if .control)
+                                 ~ ('Alt-'   if .alt)
+                                 ~ ('Shift-' if .shift)
+                                 ~ .key;
+                        }
+                    }
                     proceed;
                 }
                 with $key && %!keymap{$key} {
