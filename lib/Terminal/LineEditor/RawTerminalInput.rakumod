@@ -186,8 +186,11 @@ role Terminal::LineEditor::KeyMappable {
          CursorDown  => 'history-next',
 
           Alt-b      => 'move-word-back',
+          Alt-c      => 'tclc-word',           # Readline treats this as Capitalize
           Alt-d      => 'delete-word-forward',
           Alt-f      => 'move-word-forward',
+          Alt-l      => 'lowercase-word',
+          Alt-u      => 'uppercase-word',
          "Alt-\x3C"  => 'history-start',       # ALT-<
          "Alt-\x3E"  => 'history-end',         # ALT->
           ;

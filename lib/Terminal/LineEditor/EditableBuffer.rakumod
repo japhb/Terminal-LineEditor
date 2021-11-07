@@ -500,6 +500,44 @@ role Terminal::LineEditor::SingleLineTextInput {
     }
 
 
+    ### Case changes
+    method recase-char(&change --> Bool) {
+        if !$.insert-cursor.at-end {
+            my $pos    = $.insert-cursor.pos;
+            my $orig   = $.buffer.contents.substr($pos, 1);
+            my $recase = &change($orig);
+
+            $orig eq $recase ?? False
+                             !! $.buffer.replace-length($pos, 1, $recase);
+        }
+        else { False }
+    }
+
+    method recase-word(&change --> Bool) {
+        if !$.insert-cursor.at-end {
+            my $pos    = $.insert-cursor.pos;
+            my $len    = self.word-end - $pos;
+            my $orig   = $.buffer.contents.substr($pos, $len);
+            my $recase = &change($orig);
+
+            $orig eq $recase ?? False
+                             !! $.buffer.replace-length($pos, $len, $recase);
+        }
+        else { False }
+    }
+
+    method edit-uppercase-char(--> Bool) { self.recase-char(&uc) }
+    method edit-lowercase-char(--> Bool) { self.recase-char(&lc) }
+    method edit-titlecase-char(--> Bool) { self.recase-char(&tc) }
+    method edit-foldcase-char( --> Bool) { self.recase-char(&fc) }
+
+    method edit-uppercase-word(--> Bool) { self.recase-word(&uc) }
+    method edit-lowercase-word(--> Bool) { self.recase-word(&lc) }
+    method edit-titlecase-word(--> Bool) { self.recase-word(&tc) }
+    method edit-foldcase-word( --> Bool) { self.recase-word(&fc) }
+    method edit-tclc-word(     --> Bool) { self.recase-word(&tclc) }
+
+
     ### Undo/Redo
     method edit-undo(--> Bool) {
         $.buffer.undo
