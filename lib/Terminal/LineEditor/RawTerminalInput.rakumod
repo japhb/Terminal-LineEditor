@@ -143,7 +143,7 @@ role Terminal::LineEditor::KeyMappable {
     #| Default key map (from input character name to edit-* method)
     #  Largely based on control characters recognized by POSIX-style shells
     method default-keymap() {
-       #  Ctrl-@  => '',                       # CTRL-@, CTRL-SPACE
+       # 'Ctrl-@' => '',                       # CTRL-@, CTRL-SPACE
           Ctrl-A  => 'move-to-start',          # CTRL-A
           Ctrl-B  => 'move-char-back',         # CTRL-B
           Ctrl-C  => 'abort-input',            # CTRL-C
