@@ -1,6 +1,6 @@
 Revision history for Terminal-LineEditor
 
-0.0.5  *WIP*
+0.0.5  2021-11-06
   [Incompatible Changes]
   - Rename move-back/forward edit actions to move-char-back/forward to make
     namespace room for word variants; this will be invisible unless you have
