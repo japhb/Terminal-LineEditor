@@ -1,5 +1,21 @@
 Revision history for Terminal-LineEditor
 
+0.0.5  *WIP*
+  [Incompatible Changes]
+  - Rename move-back/forward edit actions to move-char-back/forward to make
+    namespace room for word variants; this will be invisible unless you have
+    been binding these actions to new keys manually
+
+  [Functionality]
+  - Support (and bind) history-start/end and move-word-back/forward
+  - Bind Alt-d to delete-word-forward (previously supported but unbound)
+
+  [Refactoring]
+  - Refactor word boundary seeks in SingleLineTextInput to allow many more
+    word-based edit methods
+  - Factor KeyMappable.decode-keyname out of CLIInput.read-input
+
+
 0.0.4  2021-11-06
   [Bug Fixes]
   - Unbreak runtime require of Terminal::LineEditor::RawTerminalInput
