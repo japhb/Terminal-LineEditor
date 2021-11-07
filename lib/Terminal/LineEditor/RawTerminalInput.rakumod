@@ -616,16 +616,8 @@ class Terminal::LineEditor::CLIInput
         }
 
         # Detect current cursor position and terminal size
-        my ($row, $col, $rows, $cols);
-        react {
-            whenever self.detect-cursor-pos {
-                ($row, $col) = @$_;
-                whenever self.detect-terminal-size {
-                    ($rows, $cols) = @$_;
-                    done;
-                }
-            }
-        }
+        my ($row,  $col)  = await self.detect-cursor-pos;
+        my ($rows, $cols) = await self.detect-terminal-size;
 
         # Set up an editable input buffer
         my $display-width = ($cols //= 80) - $col;
