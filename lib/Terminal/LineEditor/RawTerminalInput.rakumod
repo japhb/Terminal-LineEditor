@@ -6,6 +6,10 @@ use Terminal::LineEditor::DuospaceInput;
 use Terminal::LineEditor::History;
 
 
+#| To make runtime require happy
+module Terminal::LineEditor::RawTerminalInput { }
+
+
 #| Unknown keymap action
 class X::Terminal::LineEditor::UnknownAction is X::Terminal::LineEditor {
     has Str:D $.action is required;
