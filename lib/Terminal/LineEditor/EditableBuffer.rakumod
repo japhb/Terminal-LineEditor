@@ -373,6 +373,31 @@ role Terminal::LineEditor::SingleLineTextInput {
     has $.insert-cursor = $!buffer.add-cursor;
 
 
+    ### Helpers for finding word boundaries
+    method word-start() {
+        my $pos = $.insert-cursor.pos or return $pos;
+
+        my $target  = $pos - 1;
+        my $content = $.buffer.contents;
+        --$target while $target >= 0 && substr($content, $target, 1) ~~ /\s/;
+        --$target while $target >= 0 && substr($content, $target, 1) ~~ /\S/;
+
+        $target + 1
+    }
+
+    method word-end() {
+        my $pos = $.insert-cursor.pos;
+        my $end = $.insert-cursor.end;
+        return $pos if $pos >= $end;
+
+        my $target  = $pos;
+        my $content = $.buffer.contents;
+        ++$target while $target < $end && substr($content, $target, 1) ~~ /\s/;
+        ++$target while $target < $end && substr($content, $target, 1) ~~ /\S/;
+
+        $target
+    }
+
     # NOTE: Return values below indicate whether $!buffer may have been changed
 
     ### Refresh requests
@@ -391,6 +416,14 @@ role Terminal::LineEditor::SingleLineTextInput {
 
     method edit-move-char-forward(--> False) {
         $.insert-cursor.move-rel(+1);
+    }
+
+    method edit-move-word-back(--> False) {
+        $.insert-cursor.move-to(self.word-start);
+    }
+
+    method edit-move-word-forward(--> False) {
+        $.insert-cursor.move-to(self.word-end);
     }
 
     method edit-move-to-end(--> False) {
@@ -414,12 +447,7 @@ role Terminal::LineEditor::SingleLineTextInput {
     method edit-delete-word-back(--> Bool) {
         my $pos = $.insert-cursor.pos;
         if $pos {
-            my $cut     = $pos - 1;
-            my $content = $.buffer.contents;
-            --$cut while $cut >= 0 && substr($content, $cut, 1) ~~ /\s/;
-            --$cut while $cut >= 0 && substr($content, $cut, 1) ~~ /\S/;
-            $cut++;
-
+            my $cut = self.word-start;
             $.buffer.delete($cut, $pos);
         }
         else { False }
@@ -429,11 +457,7 @@ role Terminal::LineEditor::SingleLineTextInput {
         my $pos = $.insert-cursor.pos;
         my $end = $.insert-cursor.end;
         if $pos < $end {
-            my $cut     = $pos;
-            my $content = $.buffer.contents;
-            ++$cut while $cut < $end && substr($content, $cut, 1) ~~ /\s/;
-            ++$cut while $cut < $end && substr($content, $cut, 1) ~~ /\S/;
-
+            my $cut = self.word-end;
             $.buffer.delete($pos, $cut);
         }
         else { False }
