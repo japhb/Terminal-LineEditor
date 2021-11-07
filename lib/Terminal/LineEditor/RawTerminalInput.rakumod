@@ -184,6 +184,9 @@ role Terminal::LineEditor::KeyMappable {
          CursorEnd   => 'move-to-end',
          CursorUp    => 'history-prev',
          CursorDown  => 'history-next',
+
+         "Alt-\x3C" => 'history-start',        # ALT-<
+         "Alt-\x3E" => 'history-end',          # ALT->
           ;
     }
 
@@ -625,6 +628,17 @@ class Terminal::LineEditor::CLIInput
         my $display-width = ($cols //= 80) - $col;
         self.replace-input-field(:$display-width, :field-start($col), :$mask);
 
+        my sub do-history-start() {
+            return unless @.history && $.history-cursor && !$mask.defined;
+
+            $!unfinished-entry = $.input-field.buffer.contents
+                if self.history-cursor-at-end;
+
+            self.jump-to-history-start;
+            self.replace-input-field(:$display-width, :field-start($col),
+                                     :$mask, :content(self.history-entry));
+        }
+
         my sub do-history-prev() {
             return unless @.history && $.history-cursor && !$mask.defined;
 
@@ -640,6 +654,14 @@ class Terminal::LineEditor::CLIInput
             return if self.history-cursor-at-end || $mask.defined;
 
             self.history-next;
+            self.replace-input-field(:$display-width, :field-start($col),
+                                     :$mask, :content(self.history-entry));
+        }
+
+        my sub do-history-end() {
+            return if self.history-cursor-at-end || $mask.defined;
+
+            self.jump-to-history-end;
             self.replace-input-field(:$display-width, :field-start($col),
                                      :$mask, :content(self.history-entry));
         }
@@ -662,8 +684,10 @@ class Terminal::LineEditor::CLIInput
                 }
                 orwith $key && %!keymap{$key} {
                     when 'literal-next'    { $literal-mode = True }
+                    when 'history-start'   { do-history-start }
                     when 'history-prev'    { do-history-prev }
                     when 'history-next'    { do-history-next }
+                    when 'history-end'     { do-history-end }
                     when 'suspend'         { self.suspend(:&on-suspend, :&on-continue);
                                              $.input-field.force-pos-to-start;
                                              self.do-edit('insert-string', ''); }
