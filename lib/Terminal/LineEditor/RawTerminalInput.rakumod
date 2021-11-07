@@ -186,6 +186,7 @@ role Terminal::LineEditor::KeyMappable {
          CursorDown  => 'history-next',
 
           Alt-b      => 'move-word-back',
+          Alt-d      => 'delete-word-forward',
           Alt-f      => 'move-word-forward',
          "Alt-\x3C"  => 'history-start',       # ALT-<
          "Alt-\x3E"  => 'history-end',         # ALT->
