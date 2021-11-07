@@ -385,11 +385,11 @@ role Terminal::LineEditor::SingleLineTextInput {
         $.insert-cursor.move-to(0);
     }
 
-    method edit-move-back(--> False) {
+    method edit-move-char-back(--> False) {
         $.insert-cursor.move-rel(-1);
     }
 
-    method edit-move-forward(--> False) {
+    method edit-move-char-forward(--> False) {
         $.insert-cursor.move-rel(+1);
     }
 

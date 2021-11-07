@@ -145,11 +145,11 @@ role Terminal::LineEditor::KeyMappable {
     method default-keymap() {
        #  Ctrl-@  => '',                       # CTRL-@, CTRL-SPACE
           Ctrl-A  => 'move-to-start',          # CTRL-A
-          Ctrl-B  => 'move-back',              # CTRL-B
+          Ctrl-B  => 'move-char-back',         # CTRL-B
           Ctrl-C  => 'abort-input',            # CTRL-C
           Ctrl-D  => 'abort-or-delete',        # CTRL-D (or delete-char-forward)
           Ctrl-E  => 'move-to-end',            # CTRL-E
-          Ctrl-F  => 'move-forward',           # CTRL-F
+          Ctrl-F  => 'move-char-forward',      # CTRL-F
        #  Ctrl-G  => 'abort-modal',            # CTRL-G
           Ctrl-H  => 'delete-char-back',       # CTRL-H
        #  Ctrl-I  => 'tab',                    # CTRL-I, TAB
@@ -178,8 +178,8 @@ role Terminal::LineEditor::KeyMappable {
 
          Backspace   => 'delete-char-back',    # CTRL-?, BACKSPACE
 
-         CursorLeft  => 'move-back',
-         CursorRight => 'move-forward',
+         CursorLeft  => 'move-char-back',
+         CursorRight => 'move-char-forward',
          CursorHome  => 'move-to-start',
          CursorEnd   => 'move-to-end',
          CursorUp    => 'history-prev',

@@ -36,10 +36,10 @@ ok  $input.insert-cursor.at-end;
 nok $input.edit-move-to-start;
 is  $input.insert-cursor.pos, 0;
 ok  $input.insert-cursor.at-end;
-nok $input.edit-move-back;
+nok $input.edit-move-char-back;
 is  $input.insert-cursor.pos, 0;
 ok  $input.insert-cursor.at-end;
-nok $input.edit-move-forward;
+nok $input.edit-move-char-forward;
 is  $input.insert-cursor.pos, 0;
 ok  $input.insert-cursor.at-end;
 nok $input.edit-move-to-end;
@@ -115,25 +115,25 @@ ok  $input.edit-refresh-all;
 nok $input.edit-move-to-end;
 is  $input.insert-cursor.pos, 7;
 ok  $input.insert-cursor.at-end;
-nok $input.edit-move-forward;
+nok $input.edit-move-char-forward;
 is  $input.insert-cursor.pos, 7;
 ok  $input.insert-cursor.at-end;
 
-nok $input.edit-move-back;
+nok $input.edit-move-char-back;
 is  $input.insert-cursor.pos, 6;
 nok $input.insert-cursor.at-end;
 nok $input.edit-move-to-start;
 is  $input.insert-cursor.pos, 0;
 nok $input.insert-cursor.at-end;
 
-nok $input.edit-move-back;
+nok $input.edit-move-char-back;
 is  $input.insert-cursor.pos, 0;
 nok $input.insert-cursor.at-end;
 nok $input.edit-move-to-start;
 is  $input.insert-cursor.pos, 0;
 nok $input.insert-cursor.at-end;
 
-nok $input.edit-move-forward;
+nok $input.edit-move-char-forward;
 is  $input.insert-cursor.pos, 1;
 nok $input.insert-cursor.at-end;
 nok $input.edit-move-to-end;
@@ -147,7 +147,7 @@ is  $input.buffer.contents, 'foo bza';
 is  $input.insert-cursor.pos, 7;
 ok  $input.insert-cursor.at-end;
 
-nok $input.edit-move-back;
+nok $input.edit-move-char-back;
 is  $input.insert-cursor.pos, 6;
 nok $input.insert-cursor.at-end;
 ok  $input.edit-swap-chars;
@@ -155,8 +155,8 @@ is  $input.buffer.contents, 'foo baz';
 is  $input.insert-cursor.pos, 7;
 ok  $input.insert-cursor.at-end;
 
-nok $input.edit-move-back;
-nok $input.edit-move-back;
+nok $input.edit-move-char-back;
+nok $input.edit-move-char-back;
 is  $input.insert-cursor.pos, 5;
 nok $input.insert-cursor.at-end;
 ok  $input.edit-swap-chars;
@@ -172,7 +172,7 @@ is  $input.buffer.contents, 'foo abz';
 is  $input.insert-cursor.pos, 0;
 nok $input.insert-cursor.at-end;
 
-nok $input.edit-move-forward;
+nok $input.edit-move-char-forward;
 is  $input.insert-cursor.pos, 1;
 nok $input.insert-cursor.at-end;
 ok  $input.edit-swap-chars;
@@ -260,7 +260,7 @@ is  $input.buffer.contents, '  baz  bar';
 is  $input.insert-cursor.pos, 10;
 ok  $input.insert-cursor.at-end;
 
-nok($input.edit-move-back) xx 4;
+nok($input.edit-move-char-back) xx 4;
 is  $input.insert-cursor.pos, 6;
 nok $input.insert-cursor.at-end;
 
@@ -274,7 +274,7 @@ is  $input.buffer.contents, ' bar';
 is  $input.insert-cursor.pos, 0;
 nok $input.insert-cursor.at-end;
 
-nok($input.edit-move-forward) xx 2;
+nok($input.edit-move-char-forward) xx 2;
 is  $input.insert-cursor.pos, 2;
 nok $input.insert-cursor.at-end;
 
