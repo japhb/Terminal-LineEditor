@@ -16,6 +16,17 @@ role Terminal::LineEditor::HistoryTracking {
         self.jump-to-history-end;
     }
 
+    #| Load history from a file
+    method load-history(IO() $file) {
+        @.history.push($_) for $file.lines;
+        self.jump-to-history-end;
+    }
+
+    #| Save history to a file
+    method save-history(IO() $file) {
+        $file.spurt(@.history.map(* ~ "\n").join);
+    }
+
     #| Delete the history entry at a particular index (defaults to current
     #| history-cursor); silently ignores if outside history range
     method delete-history-index(UInt:D $index = $.history-cursor) {
