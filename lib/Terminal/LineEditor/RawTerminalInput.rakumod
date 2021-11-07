@@ -18,79 +18,6 @@ class X::Terminal::LineEditor::UnknownAction is X::Terminal::LineEditor {
 }
 
 
-#| Role for UIs that map keyboard combos to edit actions
-role Terminal::LineEditor::KeyMappable {
-    has %.keymap = self.default-keymap;
-
-    #| Default key map (from input character name to edit-* method)
-    #  Largely based on control characters recognized by POSIX-style shells
-    method default-keymap() {
-       #  Ctrl-@  => '',                       # CTRL-@, CTRL-SPACE
-          Ctrl-A  => 'move-to-start',          # CTRL-A
-          Ctrl-B  => 'move-back',              # CTRL-B
-          Ctrl-C  => 'abort-input',            # CTRL-C
-          Ctrl-D  => 'abort-or-delete',        # CTRL-D (or delete-char-forward)
-          Ctrl-E  => 'move-to-end',            # CTRL-E
-          Ctrl-F  => 'move-forward',           # CTRL-F
-       #  Ctrl-G  => 'abort-modal',            # CTRL-G
-          Ctrl-H  => 'delete-char-back',       # CTRL-H
-       #  Ctrl-I  => 'tab',                    # CTRL-I, TAB
-          Ctrl-J  => 'finish',                 # CTRL-J, LF
-          Ctrl-K  => 'delete-to-end',          # CTRL-K
-          Ctrl-L  => 'refresh-all',            # CTRL-L
-          Ctrl-M  => 'finish',                 # CTRL-M, CR
-          Ctrl-N  => 'history-next',           # CTRL-N
-       #  Ctrl-O  => '',                       # CTRL-O
-          Ctrl-P  => 'history-prev',           # CTRL-P
-       #  Ctrl-Q  => '',                       # CTRL-Q
-       #  Ctrl-R  => 'history-reverse-search', # CTRL-R
-       #  Ctrl-S  => 'history-forward-search', # CTRL-S
-          Ctrl-T  => 'swap-chars',             # CTRL-T
-          Ctrl-U  => 'delete-to-start',        # CTRL-U
-          Ctrl-V  => 'literal-next',           # CTRL-V
-          Ctrl-W  => 'delete-word-back',       # CTRL-W
-       #  Ctrl-X  => 'prefix',                 # CTRL-X
-          Ctrl-Y  => 'yank',                   # CTRL-Y
-          Ctrl-Z  => 'suspend',                # CTRL-Z
-       # 'Ctrl-[' => 'escape',                 # CTRL-[, ESC
-       # 'Ctrl-\' => 'quit',                   # CTRL-\
-       # 'Ctrl-]' => '',                       # CTRL-]
-       # 'Ctrl-^' => '',                       # CTRL-^
-         'Ctrl-_' => 'undo',                   # CTRL-_
-
-         Backspace   => 'delete-char-back',    # CTRL-?, BACKSPACE
-
-         CursorLeft  => 'move-back',
-         CursorRight => 'move-forward',
-         CursorHome  => 'move-to-start',
-         CursorEnd   => 'move-to-end',
-         CursorUp    => 'history-prev',
-         CursorDown  => 'history-next',
-          ;
-    }
-
-    #| Class for instantiating input fields; define in composing class
-    method input-class() { ... }
-
-    #| Set of valid special actions; override in a composing class
-    method special-actions() { set() }
-
-    #| Throw an exception unless $action is a valid edit action
-    method ensure-valid-keymap-action(Str:D $action) {
-        X::Terminal::LineEditor::UnknownAction.new(:$action).throw
-            unless self.special-actions(){$action}
-                || $.input-class.^can("edit-$action");
-    }
-
-    #| Bind a key (by name) to an edit action (by short string name);
-    #| modifiers are represented by prefixed Meta-/Ctrl-/Alt-/Shift-
-    method bind-key(Str:D $key-name, Str:D $action) {
-        self.ensure-valid-keymap-action($action);
-        %!keymap{$key-name} = $action;
-    }
-}
-
-
 # Below enums and lookup tables taken from Terminal::Print::DecodedInput
 # (previous work by japhb)
 
@@ -207,6 +134,102 @@ my %special-keys =
     "\e[I"    => FocusIn,
     "\e[O"    => FocusOut,
     ;
+
+
+#| Role for UIs that map keyboard combos to edit actions
+role Terminal::LineEditor::KeyMappable {
+    has %.keymap = self.default-keymap;
+
+    #| Default key map (from input character name to edit-* method)
+    #  Largely based on control characters recognized by POSIX-style shells
+    method default-keymap() {
+       #  Ctrl-@  => '',                       # CTRL-@, CTRL-SPACE
+          Ctrl-A  => 'move-to-start',          # CTRL-A
+          Ctrl-B  => 'move-back',              # CTRL-B
+          Ctrl-C  => 'abort-input',            # CTRL-C
+          Ctrl-D  => 'abort-or-delete',        # CTRL-D (or delete-char-forward)
+          Ctrl-E  => 'move-to-end',            # CTRL-E
+          Ctrl-F  => 'move-forward',           # CTRL-F
+       #  Ctrl-G  => 'abort-modal',            # CTRL-G
+          Ctrl-H  => 'delete-char-back',       # CTRL-H
+       #  Ctrl-I  => 'tab',                    # CTRL-I, TAB
+          Ctrl-J  => 'finish',                 # CTRL-J, LF
+          Ctrl-K  => 'delete-to-end',          # CTRL-K
+          Ctrl-L  => 'refresh-all',            # CTRL-L
+          Ctrl-M  => 'finish',                 # CTRL-M, CR
+          Ctrl-N  => 'history-next',           # CTRL-N
+       #  Ctrl-O  => '',                       # CTRL-O
+          Ctrl-P  => 'history-prev',           # CTRL-P
+       #  Ctrl-Q  => '',                       # CTRL-Q
+       #  Ctrl-R  => 'history-reverse-search', # CTRL-R
+       #  Ctrl-S  => 'history-forward-search', # CTRL-S
+          Ctrl-T  => 'swap-chars',             # CTRL-T
+          Ctrl-U  => 'delete-to-start',        # CTRL-U
+          Ctrl-V  => 'literal-next',           # CTRL-V
+          Ctrl-W  => 'delete-word-back',       # CTRL-W
+       #  Ctrl-X  => 'prefix',                 # CTRL-X
+          Ctrl-Y  => 'yank',                   # CTRL-Y
+          Ctrl-Z  => 'suspend',                # CTRL-Z
+       # 'Ctrl-[' => 'escape',                 # CTRL-[, ESC
+       # 'Ctrl-\' => 'quit',                   # CTRL-\
+       # 'Ctrl-]' => '',                       # CTRL-]
+       # 'Ctrl-^' => '',                       # CTRL-^
+         'Ctrl-_' => 'undo',                   # CTRL-_
+
+         Backspace   => 'delete-char-back',    # CTRL-?, BACKSPACE
+
+         CursorLeft  => 'move-back',
+         CursorRight => 'move-forward',
+         CursorHome  => 'move-to-start',
+         CursorEnd   => 'move-to-end',
+         CursorUp    => 'history-prev',
+         CursorDown  => 'history-next',
+          ;
+    }
+
+    #| Class for instantiating input fields; define in composing class
+    method input-class() { ... }
+
+    #| Set of valid special actions; override in a composing class
+    method special-actions() { set() }
+
+    #| Throw an exception unless $action is a valid edit action
+    method ensure-valid-keymap-action(Str:D $action) {
+        X::Terminal::LineEditor::UnknownAction.new(:$action).throw
+            unless self.special-actions(){$action}
+                || $.input-class.^can("edit-$action");
+    }
+
+    #| Bind a key (by name) to an edit action (by short string name);
+    #| modifiers are represented by prefixed Meta-/Ctrl-/Alt-/Shift-
+    method bind-key(Str:D $key-name, Str:D $action) {
+        self.ensure-valid-keymap-action($action);
+        %!keymap{$key-name} = $action;
+    }
+
+    #| Decode keyname for a control, modified, or special key
+    #| (or return Nil if not one of the above)
+    method decode-keyname($input) {
+        do given $input {
+            when Str {
+                my $ord = .ord;
+                $ord <  32  ?? 'Ctrl-' ~ ($ord + 64).chr !!
+                $ord == 127 ?? 'Backspace' !!
+                               Nil
+            }
+            when Pair {
+                my $key = .key;
+                $key ~~ Str        ??  $key !!
+                $key ~~ SpecialKey ?? ~$key !!
+                                        ('Meta-'  if $key.meta)
+                                      ~ ('Ctrl-'  if $key.control)
+                                      ~ ('Alt-'   if $key.alt)
+                                      ~ ('Shift-' if $key.shift)
+                                      ~ $key.key
+            }
+        }
+    }
+}
 
 
 #| Class for active terminal queries
@@ -633,40 +656,11 @@ class Terminal::LineEditor::CLIInput
                 $literal-mode = False;
             }
             else {
-                my $key;
-                when Str {
-                    my $ord = .ord;
-                    if $ord < 32 {
-                        $key = 'Ctrl-' ~ ($ord + 64).chr;
-                        proceed;
-                    }
-                    elsif $ord == 127 {
-                        $key = 'Backspace';
-                        proceed;
-                    }
-                    else {
-                        self.do-edit('insert-string', $_);
-                    }
+                my $key = self.decode-keyname($_);
+                if !$key {
+                    self.do-edit('insert-string', $_);
                 }
-                when Pair {
-                    given .key {
-                        when Str {
-                            $key = $_;
-                        }
-                        when SpecialKey {
-                            $key = ~$_;
-                        }
-                        when ModifiedSpecialKey {
-                            $key = ('Meta-'  if .meta)
-                                 ~ ('Ctrl-'  if .control)
-                                 ~ ('Alt-'   if .alt)
-                                 ~ ('Shift-' if .shift)
-                                 ~ .key;
-                        }
-                    }
-                    proceed;
-                }
-                with $key && %!keymap{$key} {
+                orwith $key && %!keymap{$key} {
                     when 'literal-next'    { $literal-mode = True }
                     when 'history-prev'    { do-history-prev }
                     when 'history-next'    { do-history-next }
