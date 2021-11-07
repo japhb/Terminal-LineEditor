@@ -1,8 +1,12 @@
 Revision history for Terminal-LineEditor
 
 0.0.4  *WIP*
+  [Bug Fixes]
+  - Unbreak runtime require of Terminal::LineEditor::RawTerminalInput
+
   [Functionality]
   - Support mapping Alt-[normal key], though none mapped yet
+  - Add support for load/save history in a history file
 
   [Refactoring]
   - Split the Terminal::LineEditor::HistoryTracking role out to its own module
