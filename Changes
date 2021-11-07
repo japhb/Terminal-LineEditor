@@ -1,6 +1,6 @@
 Revision history for Terminal-LineEditor
 
-0.0.4  *WIP*
+0.0.4  2021-11-06
   [Bug Fixes]
   - Unbreak runtime require of Terminal::LineEditor::RawTerminalInput
 
