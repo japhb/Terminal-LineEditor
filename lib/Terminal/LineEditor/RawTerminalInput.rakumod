@@ -351,7 +351,7 @@ role Terminal::LineEditor::RawTerminalIO {
                         my $lead = "\e[$1";
                         my $tail = ~$3;
 
-                        if !$1 && @args && $tail eq '~' {
+                        if (!$1 || !~$1) && @args && ($tail ∈ < ~ A B C D E F H >) {
                             # Special key with possible modifiers
                             my $base = $lead ~ @args[0] ~ $tail;
                             with %special-keys{$base} -> $key {
