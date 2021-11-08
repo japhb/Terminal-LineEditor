@@ -1,5 +1,17 @@
 Revision history for Terminal-LineEditor
 
+0.0.6  *WIP*
+  [Functionality]
+  - Support char and word recasing edit methods, binding word variants for
+    uppercase, lowercase, and tclc (title case followed by lowercase)
+  - Implement and bind swap-words
+
+  [Refactoring]
+  - Simplify cursor position/terminal size detection (patrickb++ for noticing
+    that refactoring had left more complex code than needed)
+  - Extend word-start/end helpers for repeated use or use at arbitrary buffer
+    positions
+
 0.0.5  2021-11-06
   [Incompatible Changes]
   - Rename move-back/forward edit actions to move-char-back/forward to make
