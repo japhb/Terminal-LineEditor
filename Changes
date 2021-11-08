@@ -1,5 +1,10 @@
 Revision history for Terminal-LineEditor
 
+0.0.9  *WIP*
+  [Functionality]
+  - Support Linenoise-style tab completion (tab rotates through options)
+
+
 0.0.8  2021-11-08
   [Bug fix]
   - Make sure history-start and history-end are mappable as special actions
