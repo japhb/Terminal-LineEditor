@@ -1,6 +1,6 @@
 Revision history for Terminal-LineEditor
 
-0.0.6  *WIP*
+0.0.6  2021-11-07
   [Functionality]
   - Support char and word recasing edit methods, binding word variants for
     uppercase, lowercase, and tclc (title case followed by lowercase)

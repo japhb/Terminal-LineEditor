@@ -1,4 +1,4 @@
-unit class Terminal::LineEditor:auth<zef:japhb>:api<0>:ver<0.0.5>;
+unit class Terminal::LineEditor:auth<zef:japhb>:api<0>:ver<0.0.6>;
 
 
 =begin pod
