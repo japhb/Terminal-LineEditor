@@ -498,6 +498,22 @@ role Terminal::LineEditor::SingleLineTextInput {
         else { False }
     }
 
+    method edit-swap-words(--> Bool) {
+        my $word2-end   = self.word-end               or return False;
+        my $word2-start = self.word-start($word2-end) or return False;
+        my $word1-start = self.word-start($word2-start);
+        my $word1-end   = self.word-end($word1-start);
+        if $word1-start != $word1-end != $word2-start != $word2-end {
+            my $content = $.buffer.contents;
+            my $word1   = substr($content, $word1-start,   $word1-end - $word1-start);
+            my $ws      = substr($content, $word1-end,   $word2-start - $word1-end);
+            my $word2   = substr($content, $word2-start,   $word2-end - $word2-start);
+            my $new     = $word2 ~ $ws ~ $word1;
+            $.buffer.replace-length($word1-start, $word2-end - $word1-start, $new);
+        }
+        else { False }
+    }
+
 
     ### Case changes
     method recase-char(&change --> Bool) {

@@ -190,6 +190,7 @@ role Terminal::LineEditor::KeyMappable {
           Alt-d      => 'delete-word-forward',
           Alt-f      => 'move-word-forward',
           Alt-l      => 'lowercase-word',
+          Alt-t      => 'swap-words',
           Alt-u      => 'uppercase-word',
          "Alt-\x3C"  => 'history-start',       # ALT-<
          "Alt-\x3E"  => 'history-end',         # ALT->
