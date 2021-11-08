@@ -1,5 +1,10 @@
 Revision history for Terminal-LineEditor
 
+0.0.7  2021-11-07
+  [Bug fix]
+  - Fix hang on Alt-<cursor key>; moon-child++ for noticing this
+
+
 0.0.6  2021-11-07
   [Functionality]
   - Support char and word recasing edit methods, binding word variants for
