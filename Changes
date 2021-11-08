@@ -1,5 +1,13 @@
 Revision history for Terminal-LineEditor
 
+0.0.8  *WIP*
+  [Bug fix]
+  - Make sure history-start and history-end are mappable as special actions
+
+  [Docs]
+  - Expand and update README considerably
+
+
 0.0.7  2021-11-07
   [Bug fix]
   - Fix hang on Alt-<cursor key>; moon-child++ for noticing this
@@ -16,6 +24,7 @@ Revision history for Terminal-LineEditor
     that refactoring had left more complex code than needed)
   - Extend word-start/end helpers for repeated use or use at arbitrary buffer
     positions
+
 
 0.0.5  2021-11-06
   [Incompatible Changes]
