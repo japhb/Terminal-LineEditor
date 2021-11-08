@@ -24,7 +24,8 @@ my $cli = Terminal::LineEditor::CLIInput.new;
 ### BASICS
 
 # Preload some input history
-$cli.add-history('a previous input', 'another previous input');
+$cli.load-history($history-file);
+$cli.add-history('synthetic input', 'more synthetic input');
 
 # Prompt for input, supporting common edit commands,
 # scrolling the field to stay on one line
@@ -36,8 +37,9 @@ my $pass  = $cli.prompt('Password: ', mask => '*');
 # Prompt defaults to empty
 my $stuff = $cli.prompt;
 
-# Review history
+# Review and save history
 .say for $cli.history;
+$cli.save-history($history-file);
 
 
 ### TYPICAL USE
