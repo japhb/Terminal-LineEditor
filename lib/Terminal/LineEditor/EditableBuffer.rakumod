@@ -374,10 +374,10 @@ role Terminal::LineEditor::SingleLineTextInput {
 
 
     ### Helpers for finding word boundaries
-    method word-start() {
-        my $pos = $.insert-cursor.pos or return $pos;
+    method word-start($from = $.insert-cursor.pos) {
+        return $from unless $from;
 
-        my $target  = $pos - 1;
+        my $target  = $from - 1;
         my $content = $.buffer.contents;
         --$target while $target >= 0 && substr($content, $target, 1) ~~ /\s/;
         --$target while $target >= 0 && substr($content, $target, 1) ~~ /\S/;
@@ -385,12 +385,11 @@ role Terminal::LineEditor::SingleLineTextInput {
         $target + 1
     }
 
-    method word-end() {
-        my $pos = $.insert-cursor.pos;
+    method word-end($from = $.insert-cursor.pos) {
         my $end = $.insert-cursor.end;
-        return $pos if $pos >= $end;
+        return $from if $from >= $end;
 
-        my $target  = $pos;
+        my $target  = $from;
         my $content = $.buffer.contents;
         ++$target while $target < $end && substr($content, $target, 1) ~~ /\s/;
         ++$target while $target < $end && substr($content, $target, 1) ~~ /\S/;
