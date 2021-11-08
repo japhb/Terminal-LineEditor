@@ -578,8 +578,8 @@ class Terminal::LineEditor::CLIInput
     #| Valid special actions
     method special-actions() {
         constant $special
-            = set < abort-input abort-or-delete finish
-                    history-next history-prev literal-next suspend >;
+            = set < abort-input abort-or-delete finish literal-next suspend
+                    history-start history-end history-next history-prev >;
     }
 
     #| Do edit in current input field, then print and flush the full refresh string
