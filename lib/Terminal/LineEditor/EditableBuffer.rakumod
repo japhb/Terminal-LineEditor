@@ -397,6 +397,7 @@ role Terminal::LineEditor::SingleLineTextInput {
         $target
     }
 
+
     # NOTE: Return values below indicate whether $!buffer may have been changed
 
     ### Refresh requests
