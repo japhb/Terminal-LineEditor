@@ -1,6 +1,6 @@
 Revision history for Terminal-LineEditor
 
-0.0.9  *WIP*
+0.0.9  2021-11-08
   [Functionality]
   - Support Linenoise-style tab completion (tab rotates through options)
 
