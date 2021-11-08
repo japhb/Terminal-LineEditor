@@ -627,6 +627,7 @@ class Terminal::LineEditor::CLIInput
         my $display-width = ($cols //= 80) - $col;
         self.replace-input-field(:$display-width, :field-start($col), :$mask);
 
+        # History helpers
         my sub do-history-start() {
             return unless @.history && $.history-cursor && !$mask.defined;
 
