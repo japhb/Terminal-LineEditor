@@ -152,7 +152,7 @@ role Terminal::LineEditor::KeyMappable {
           Ctrl-F  => 'move-char-forward',      # CTRL-F
        #  Ctrl-G  => 'abort-modal',            # CTRL-G
           Ctrl-H  => 'delete-char-back',       # CTRL-H
-       #  Ctrl-I  => 'tab',                    # CTRL-I, TAB
+          Ctrl-I  => 'complete',               # CTRL-I, TAB
           Ctrl-J  => 'finish',                 # CTRL-J, LF
           Ctrl-K  => 'delete-to-end',          # CTRL-K
           Ctrl-L  => 'refresh-all',            # CTRL-L
@@ -569,6 +569,7 @@ class Terminal::LineEditor::CLIInput
  does Terminal::LineEditor::RawTerminalUtils {
     has $.input-class = Terminal::LineEditor::ScrollingSingleLineInput::ANSI;
     has $.input-field;
+    has &.get-completions;
 
     #| Start the decoder reactor as soon as everything else is set up
     method TWEAK() {
@@ -579,7 +580,18 @@ class Terminal::LineEditor::CLIInput
     method special-actions() {
         constant $special
             = set < abort-input abort-or-delete finish literal-next suspend
-                    history-start history-end history-next history-prev >;
+                    history-start history-end history-next history-prev
+                    complete >;
+    }
+
+    #| Fetch completions based on current buffer contents and cursor pos
+    method fetch-completions() {
+        with &.get-completions {
+            my $contents = $.input-field.buffer.contents;
+            my $pos      = $.input-field.insert-cursor.pos;
+            $_($contents, $pos);
+        }
+        else { Empty }
     }
 
     #| Do edit in current input field, then print and flush the full refresh string
@@ -666,6 +678,37 @@ class Terminal::LineEditor::CLIInput
                                      :$mask, :content(self.history-entry));
         }
 
+        # Completion helpers
+        my $completions;
+        my $completion-index;
+        my sub do-complete() {
+            if $completions {
+                # Undo previous completion if any
+                my $max = $completions.elems;
+                self.do-edit('undo') if $completion-index < $max;
+
+                # Revert to non-completion if at end
+                return if ++$completion-index == $max;
+
+                $completion-index = 0 if $completion-index > $max;
+            }
+            else {
+                $completions      = self.fetch-completions or return;
+                $completion-index = 0;
+            }
+
+            my $edited = $.input-field.buffer.replace(0, $.input-field.insert-cursor.pos,
+                                                      $completions[$completion-index]);
+            $.output.print($.input-field.refresh-string($edited));
+            $.output.flush;
+        }
+
+        # If not currently completing, all other actions reset completions
+        my sub reset-completions() {
+            $completions      = Nil;
+            $completion-index = Nil;
+        }
+
         # Read raw characters and dispatch either as actions or chars to insert
         my $literal-mode = False;
         my $aborted      = False;
@@ -681,8 +724,12 @@ class Terminal::LineEditor::CLIInput
                 my $key = self.decode-keyname($_);
                 if !$key {
                     self.do-edit('insert-string', $_);
+                    reset-completions;
                 }
                 orwith $key && %!keymap{$key} {
+                    when 'complete'        { do-complete }
+                    reset-completions;
+
                     when 'literal-next'    { $literal-mode = True }
                     when 'history-start'   { do-history-start }
                     when 'history-prev'    { do-history-prev }
