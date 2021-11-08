@@ -65,6 +65,44 @@ DESCRIPTION
 
   * Useable both directly for simple CLI apps and embedded in TUI interfaces.
 
+Use with Rakudo REPL
+--------------------
+
+A [PR for Rakudo](https://github.com/rakudo/rakudo/pull/4623) has been created to allow `Terminal::LineEditor` to be used as the REPL line editor when Rakudo is used in interactive mode. If your Rakudo build includes this PR, you can set the following in your environment to use `Terminal::LineEditor` by default:
+
+```raku
+export RAKUDO_LINE_EDITOR=LineEditor
+```
+
+If the environment variable is *not* specified, but `Terminal::LineEditor` is the only line editing module installed, Rakudo will auto-detect and enable it.
+
+Default Keymap
+--------------
+
+The latest version of the default keymap is specified in `Terminal::LineEditor::KeyMappable.default-keymap()`, but the below represents the currently implemented, commonly used keys:
+
+<table class="pod-table">
+<caption>Commonly Used Keys</caption>
+<thead><tr>
+<th>KEY</th> <th>FUNCTION</th> <th>NOTES</th>
+</tr></thead>
+<tbody>
+<tr> <td>Ctrl-A</td> <td>move-to-start</td> <td></td> </tr> <tr> <td>Ctrl-B</td> <td>move-char-back</td> <td></td> </tr> <tr> <td>Ctrl-C</td> <td>abort-input</td> <td></td> </tr> <tr> <td>Ctrl-D</td> <td>abort-or-delete</td> <td>Abort if empty, or delete-char-forward</td> </tr> <tr> <td>Ctrl-E</td> <td>move-to-end</td> <td></td> </tr> <tr> <td>Ctrl-F</td> <td>move-char-forward</td> <td></td> </tr> <tr> <td>Ctrl-H</td> <td>delete-char-back</td> <td></td> </tr> <tr> <td>Ctrl-J</td> <td>finish</td> <td>LF (Line Feed)</td> </tr> <tr> <td>Ctrl-K</td> <td>delete-to-end</td> <td></td> </tr> <tr> <td>Ctrl-L</td> <td>refresh-all</td> <td></td> </tr> <tr> <td>Ctrl-M</td> <td>finish</td> <td>CR (Carriage Return)</td> </tr> <tr> <td>Ctrl-N</td> <td>history-next</td> <td></td> </tr> <tr> <td>Ctrl-P</td> <td>history-prev</td> <td></td> </tr> <tr> <td>Ctrl-T</td> <td>swap-chars</td> <td></td> </tr> <tr> <td>Ctrl-U</td> <td>delete-to-start</td> <td></td> </tr> <tr> <td>Ctrl-V</td> <td>literal-next</td> <td></td> </tr> <tr> <td>Ctrl-W</td> <td>delete-word-back</td> <td></td> </tr> <tr> <td>Ctrl-Y</td> <td>yank</td> <td></td> </tr> <tr> <td>Ctrl-Z</td> <td>suspend</td> <td></td> </tr> <tr> <td>Ctrl-_</td> <td>undo</td> <td>Ctrl-Shift-&lt;hyphen&gt; on some keyboards</td> </tr> <tr> <td>Backspace</td> <td>delete-char-back</td> <td></td> </tr> <tr> <td>CursorLeft</td> <td>move-char-back</td> <td></td> </tr> <tr> <td>CursorRight</td> <td>move-char-forward</td> <td></td> </tr> <tr> <td>CursorHome</td> <td>move-to-start</td> <td></td> </tr> <tr> <td>CursorEnd</td> <td>move-to-end</td> <td></td> </tr> <tr> <td>CursorUp</td> <td>history-prev</td> <td></td> </tr> <tr> <td>CursorDown</td> <td>history-next</td> <td></td> </tr> <tr> <td>Alt-b</td> <td>move-word-back</td> <td></td> </tr> <tr> <td>Alt-c</td> <td>tclc-word</td> <td>Readline treats this as Capitalize</td> </tr> <tr> <td>Alt-d</td> <td>delete-word-forward</td> <td></td> </tr> <tr> <td>Alt-f</td> <td>move-word-forward</td> <td></td> </tr> <tr> <td>Alt-l</td> <td>lowercase-word</td> <td></td> </tr> <tr> <td>Alt-t</td> <td>swap-words</td> <td></td> </tr> <tr> <td>Alt-u</td> <td>uppercase-word</td> <td></td> </tr> <tr> <td>Alt-&lt;</td> <td>history-start</td> <td>Alt-Shift-&lt;comma&gt; on some keyboards</td> </tr> <tr> <td>Alt-&gt;</td> <td>history-end</td> <td>Alt-Shift-&lt;period&gt; on some keyboards</td> </tr>
+</tbody>
+</table>
+
+All bindable edit functions are defined in the `Terminal::LineEditor::SingleLineTextInput` role (in each corresponding method beginning with `edit-`) or is one of the following special actions:
+
+<table class="pod-table">
+<caption>Special Actions</caption>
+<thead><tr>
+<th>ACTION</th> <th>MEANING</th>
+</tr></thead>
+<tbody>
+<tr> <td>abort-input</td> <td>Throw away input so far and return an undefined Str</td> </tr> <tr> <td>abort-or-delete</td> <td>abort-input if empty, otherwise delete-char-forward</td> </tr> <tr> <td>finish</td> <td>Accept and return current input line</td> </tr> <tr> <td>literal-next</td> <td>Insert a literal control character into the buffer</td> </tr> <tr> <td>suspend</td> <td>Suspend the program with SIGTSTP, wait for SIGCONT</td> </tr> <tr> <td>history-start</td> <td>Switch input to first line in history</td> </tr> <tr> <td>history-prev</td> <td>Switch input to previous line in history</td> </tr> <tr> <td>history-next</td> <td>Switch input to next line in history</td> </tr> <tr> <td>history-end</td> <td>Switch input to last line in history (the partial input)</td> </tr>
+</tbody>
+</table>
+
 Architecture
 ------------
 
@@ -102,7 +140,7 @@ There are a few edge cases for which `Terminal::LineEditor` chose one of several
 Unmapped Functionality
 ----------------------
 
-Some of the functionality supported by lower layers of `Terminal::LineEditor` is not exposed in the default keymap of `Terminal::LineEditor::KeyMappable`. This is generally because no commonly-agreed shell keys in the basic control code range (codes 0 through 31) map to this functionality.
+Some of the functionality supported by lower layers of `Terminal::LineEditor` is not exposed in the default keymap of `Terminal::LineEditor::KeyMappable`. This is generally because no commonly-agreed shell keys map to this functionality.
 
 For example, `Terminal::LineEditor::SingleLineTextBuffer` can treat replace as an atomic operation, but basic POSIX shells generally don't; they instead expect the user to delete and insert as separate operations.
 

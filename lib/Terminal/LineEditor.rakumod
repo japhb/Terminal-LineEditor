@@ -74,6 +74,88 @@ them.  C<Terminal::LineEditor> has a few key design differences:
 =item Useable both directly for simple CLI apps and embedded in TUI interfaces.
 
 
+=head2 Use with Rakudo REPL
+
+A L<PR for Rakudo|https://github.com/rakudo/rakudo/pull/4623> has been created
+to allow C<Terminal::LineEditor> to be used as the REPL line editor when Rakudo
+is used in interactive mode.  If your Rakudo build includes this PR, you can
+set the following in your environment to use C<Terminal::LineEditor> by default:
+
+=begin code :lang<raku>
+export RAKUDO_LINE_EDITOR=LineEditor
+=end code
+
+If the environment variable is I<not> specified, but C<Terminal::LineEditor> is
+the only line editing module installed, Rakudo will auto-detect and enable it.
+
+
+=head2 Default Keymap
+
+The latest version of the default keymap is specified in
+C<Terminal::LineEditor::KeyMappable.default-keymap()>,
+but the below represents the currently implemented, commonly used keys:
+
+=begin table :caption<Commonly Used Keys>
+    KEY         | FUNCTION            | NOTES
+    ============|=====================|=======================================
+    Ctrl-A      | move-to-start       |
+    Ctrl-B      | move-char-back      |
+    Ctrl-C      | abort-input         |
+    Ctrl-D      | abort-or-delete     | Abort if empty, or delete-char-forward
+    Ctrl-E      | move-to-end         |
+    Ctrl-F      | move-char-forward   |
+    Ctrl-H      | delete-char-back    |
+    Ctrl-J      | finish              | LF (Line Feed)
+    Ctrl-K      | delete-to-end       |
+    Ctrl-L      | refresh-all         |
+    Ctrl-M      | finish              | CR (Carriage Return)
+    Ctrl-N      | history-next        |
+    Ctrl-P      | history-prev        |
+    Ctrl-T      | swap-chars          |
+    Ctrl-U      | delete-to-start     |
+    Ctrl-V      | literal-next        |
+    Ctrl-W      | delete-word-back    |
+    Ctrl-Y      | yank                |
+    Ctrl-Z      | suspend             |
+    Ctrl-_      | undo                | Ctrl-Shift-<hyphen> on some keyboards
+    Backspace   | delete-char-back    |
+    CursorLeft  | move-char-back      |
+    CursorRight | move-char-forward   |
+    CursorHome  | move-to-start       |
+    CursorEnd   | move-to-end         |
+    CursorUp    | history-prev        |
+    CursorDown  | history-next        |
+    Alt-b       | move-word-back      |
+    Alt-c       | tclc-word           | Readline treats this as Capitalize
+    Alt-d       | delete-word-forward |
+    Alt-f       | move-word-forward   |
+    Alt-l       | lowercase-word      |
+    Alt-t       | swap-words          |
+    Alt-u       | uppercase-word      |
+    Alt-<       | history-start       | Alt-Shift-<comma> on some keyboards
+    Alt->       | history-end         | Alt-Shift-<period> on some keyboards
+=end table
+
+All bindable edit functions are defined in the
+C<Terminal::LineEditor::SingleLineTextInput> role
+(in each corresponding method beginning with C<edit->) or is one of the
+following special actions:
+
+=begin table :caption<Special Actions>
+    ACTION          | MEANING
+    ================|=========================================================
+    abort-input     | Throw away input so far and return an undefined Str
+    abort-or-delete | abort-input if empty, otherwise delete-char-forward
+    finish          | Accept and return current input line
+    literal-next    | Insert a literal control character into the buffer
+    suspend         | Suspend the program with SIGTSTP, wait for SIGCONT
+    history-start   | Switch input to first line in history
+    history-prev    | Switch input to previous line in history
+    history-next    | Switch input to next line in history
+    history-end     | Switch input to last line in history (the partial input)
+=end table
+
+
 =head2 Architecture
 
 C<Terminal::LineEditor> is built up in layers, starting from the most abstract:
@@ -140,8 +222,8 @@ arbitrary decisions:
 
 Some of the functionality supported by lower layers of C<Terminal::LineEditor>
 is not exposed in the default keymap of C<Terminal::LineEditor::KeyMappable>.
-This is generally because no commonly-agreed shell keys in the basic control
-code range (codes 0 through 31) map to this functionality.
+This is generally because no commonly-agreed shell keys map to this
+functionality.
 
 For example, C<Terminal::LineEditor::SingleLineTextBuffer> can treat replace as
 an atomic operation, but basic POSIX shells generally don't; they instead
