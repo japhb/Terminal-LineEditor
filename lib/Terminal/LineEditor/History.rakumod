@@ -1,8 +1,8 @@
 # ABSTRACT: History tracking role
 
 role Terminal::LineEditor::HistoryTracking {
-    has UInt:D $.history-cursor   = 0;
-    has Str:D  $.unfinished-entry = '';
+    has UInt:D $.history-cursor         = 0;
+    has Str:D  $.unfinished-entry is rw = '';
     has @.history;
 
     #| Retrieve history entry by index (defaults to current history-cursor)

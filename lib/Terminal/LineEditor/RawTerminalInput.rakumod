@@ -572,7 +572,7 @@ class Terminal::LineEditor::CLIInput
     has &.get-completions;
 
     #| Start the decoder reactor as soon as everything else is set up
-    method TWEAK() {
+    submethod TWEAK() {
         self.start-decoder;
     }
 
@@ -600,6 +600,18 @@ class Terminal::LineEditor::CLIInput
         $.output.flush;
     }
 
+    #| Set $!input-field, with both compile-time and runtime type checks
+    method set-input-field(Terminal::LineEditor::ScrollingSingleLineInput:D $new-field) {
+        die "New input-field is not a $.input-class"
+            unless $new-field ~~ $.input-class;
+        $!input-field = $new-field;
+    }
+
+    #| Clear $!input-field
+    method clear-input-field() {
+        $!input-field = Nil;
+    }
+
     #| Clear and replace existing current input field (if any), then create and
     #| draw a new input field
     method replace-input-field(UInt:D :$display-width, UInt:D :$field-start,
@@ -608,7 +620,7 @@ class Terminal::LineEditor::CLIInput
         $.output.print($.input-field.clear-string) if $.input-field;
 
         # Create a new input field using the new metrics
-        $!input-field = $.input-class.new(:$display-width, :$field-start, :$mask);
+        self.set-input-field($.input-class.new(:$display-width, :$field-start, :$mask));
 
         # "Prime the render pump" and insert initial content
         $.input-field.render(:edited);
@@ -627,8 +639,8 @@ class Terminal::LineEditor::CLIInput
 
         # Clear temporaries when leaving
         LEAVE {
-            $!unfinished-entry = '';
-            $!input-field = Nil;
+            $.unfinished-entry = '';
+            self.clear-input-field;
         }
 
         # Detect current cursor position and terminal size
@@ -643,7 +655,7 @@ class Terminal::LineEditor::CLIInput
         my sub do-history-start() {
             return unless @.history && $.history-cursor && !$mask.defined;
 
-            $!unfinished-entry = $.input-field.buffer.contents
+            $.unfinished-entry = $.input-field.buffer.contents
                 if self.history-cursor-at-end;
 
             self.jump-to-history-start;
@@ -654,7 +666,7 @@ class Terminal::LineEditor::CLIInput
         my sub do-history-prev() {
             return unless @.history && $.history-cursor && !$mask.defined;
 
-            $!unfinished-entry = $.input-field.buffer.contents
+            $.unfinished-entry = $.input-field.buffer.contents
                 if self.history-cursor-at-end;
 
             self.history-prev;
