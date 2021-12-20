@@ -345,15 +345,23 @@ role Terminal::LineEditor::RawTerminalIO {
                     # Params possible, separate non-param bytes for lookup
                     # and param bytes for analysis; also determine if string
                     # is a query response and return that to the waiting query
-                    my regex csi { ^ ("\e["|\x[9B]) (<-[;0..9]>*) (<[;0..9]>*) (.+) $ };
-                    if .sequence.decode ~~ &csi {
-                        my @args = ~$2 ?? split(';', ~$2) !! Empty;
-                        my $lead = "\e[$1";
-                        my $tail = ~$3;
+                    my constant TAILS = set(|< ~ A B C D E F H >);
+                    my regex csi { ^ "\e[" (<-[;0..9]>*) (<[;0..9]>+) (.+) $ };
+                    my $decoded = .sequence[0] == 0x9B
+                                  ?? "\e[" ~ .sequence.subbuf(1).decode
+                                  !! .sequence.decode;
 
-                        if (!$1 || !~$1) && @args && ($tail ∈ < ~ A B C D E F H >) {
+                    if %special-keys{$decoded} -> $key {
+                        # Unmodified special key/event in CSI form
+                        $!dec-supplier.emit($key => $_);
+                    }
+                    elsif $decoded ~~ &csi {
+                        my $tail = ~$2;
+                        if (!$0 || !~$0) && ($tail ∈ TAILS) {
                             # Special key with possible modifiers
-                            my $base = $lead ~ @args[0] ~ $tail;
+                            my @args = split(';', ~$1);
+                            my $base = "\e[$0@args[0]$tail";
+
                             with %special-keys{$base} -> $key {
                                 if    @args == 1 {
                                     $!dec-supplier.emit($key => $_);
@@ -371,18 +379,14 @@ role Terminal::LineEditor::RawTerminalIO {
                                 !!! "Unrecognized CSI resembling special key"
                             }
                         }
-                        elsif !@args && %special-keys{$lead ~ $tail} -> $key {
-                            $!dec-supplier.emit($key => $_);
-                        }
                         elsif @!active-queries
-                           && .sequence.decode ~~ @!active-queries[0].matcher {
+                           && $decoded ~~ @!active-queries[0].matcher {
                             my $query := @!active-queries.shift;
                             my &cb    := $query.callback;
                             cb($_);
                         }
                         else {
-                            my $base = $lead ~ $tail;
-                            dd $base, @args;
+                            dd .sequence, $decoded;
                             !!! "CSI"
                         }
                     }
