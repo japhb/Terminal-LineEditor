@@ -40,6 +40,26 @@ enum ModifierKey (
     Meta    => 8,
 );
 
+enum MouseModifier is export (
+    # No support for Alt!
+    MouseButtonMask =>   3,
+    MouseShift      =>   4,
+    MouseControl    =>   8,
+    MouseMeta       =>  16,
+    MouseMotion     =>  32,
+    MouseHighMask   => 192,
+    MouseHighShift  =>   6,
+);
+
+enum MouseEventMode is export (
+    MouseNoEvents        => 0,     # No events
+    MouseNormalEvents    => 1000,  # Press and release only
+  # MouseHighlightEvents => 1001,  # UNSUPPORTED
+    MouseButtonEvents    => 1002,  # Press, release, move while pressed
+    MouseAnyEvents       => 1003,  # Press, release, any movement
+);
+
+
 class ModifiedSpecialKey {
     has SpecialKey $.key;
     has UInt       $.modifiers;
@@ -49,6 +69,18 @@ class ModifiedSpecialKey {
     method control { $.modifiers +& Control }
     method meta    { $.modifiers +& Meta    }
 }
+
+class MouseTrackingEvent {
+    has UInt $.x;
+    has UInt $.y;
+    has UInt $.button;
+    has Bool $.pressed;
+    has Bool $.motion;
+    has Bool $.shift;
+    has Bool $.control;
+    has Bool $.meta;
+}
+
 
 my %special-keys =
     # PC Normal Style      PC Application Style    VT52 Style
@@ -378,6 +410,26 @@ role Terminal::LineEditor::RawTerminalIO {
                             else {
                                 !!! "Unrecognized CSI resembling special key"
                             }
+                        }
+                        elsif $0 && (~$0 eq '<') && ($tail eq 'M' || $tail eq 'm') {  # <
+                            # Mouse tracking report
+                            my $pressed = $tail eq 'M';
+                            my @args    = split(';', ~$1);
+                            my $encoded = @args[0];
+                            my $shift   = ?($encoded +& MouseShift);
+                            my $control = ?($encoded +& MouseControl);
+                            my $meta    = ?($encoded +& MouseMeta);
+                            my $motion  = ?($encoded +& MouseMotion);
+                            my $masked  =   $encoded +& MouseButtonMask;
+                            my $high    =  ($encoded +& MouseHighMask) +> MouseHighShift;
+                            my $is-low  = $high == 0;
+                            my $button  = $is-low && $masked == MouseButtonMask
+                                          ?? UInt !! ($masked + $is-low) + 4 * $high;
+                            my $event   = MouseTrackingEvent.new(
+                                              :x(@args[1]), :y(@args[2]),
+                                              :$shift, :$control, :$meta,
+                                              :$motion, :$button, :$pressed);
+                            $!dec-supplier.emit($event);
                         }
                         elsif @!active-queries
                            && $decoded ~~ @!active-queries[0].matcher {
@@ -731,7 +783,10 @@ class Terminal::LineEditor::CLIInput
         react whenever $.decoded {
             done unless .defined;
 
-            if $literal-mode {
+            if $_ ~~ MouseTrackingEvent {
+                # Intentionally ignore mouse events for now
+            }
+            elsif $literal-mode {
                 my $string = $_ ~~ Str ?? $_ !! ~(.value);
                 self.do-edit('insert-string', $string);
                 $literal-mode = False;
