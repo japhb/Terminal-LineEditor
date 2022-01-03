@@ -293,6 +293,7 @@ role Terminal::LineEditor::RawTerminalIO {
     has Supply:D               $.decoded       = $!dec-supplier.Supply;
     has atomicint              $!done          = 0;
     has                        $!parse         = make-ansi-parser(emit-item => { $!raw-supplier.emit($_) });
+    has MouseEventMode:D       $!previous-mouse-mode = MouseNoEvents;
     has                        $!saved-termios;
     has                        @!active-queries;
 
@@ -330,6 +331,23 @@ role Terminal::LineEditor::RawTerminalIO {
             $.output.put('') if $nl;
         }
     }
+
+    #| Set a new mouse tracking event mode, disabling previous mode first if needed
+    method set-mouse-event-mode(MouseEventMode:D $mode) {
+        # Encoding/extras:
+        #   1004: Focus events
+        #   1006: SGR encoding
+
+        $.output.print("\e[?{+$!previous-mouse-mode}l\e[?1004l\e[?1006l")
+            if $!previous-mouse-mode != MouseNoEvents;
+
+        $.output.print("\e[?1006h\e[?1004h\e[?{+$mode}h")
+            if $mode != MouseNoEvents;
+
+        $.output.flush;
+        $!previous-mouse-mode = $mode;
+    }
+
 
     #| Start reading input TTY and feeding the parser; parsed stream will
     #| appear at $!raw-supply, _in binary form_ (as bytes and buffers that must
