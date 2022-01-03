@@ -41,7 +41,7 @@ enum ModifierKey (
 );
 
 enum MouseModifier is export (
-    # No support for Alt!
+    # Note: No support for Alt separate from Meta in modifier protocol
     MouseButtonMask =>   3,
     MouseShift      =>   4,
     MouseControl    =>   8,
