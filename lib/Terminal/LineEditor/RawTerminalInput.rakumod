@@ -348,7 +348,7 @@ role Terminal::LineEditor::RawTerminalIO {
         start react {
             my buf8 $buf .= new;
             whenever $!raw-supply {
-                # note "Got {.raku}";
+                # note "Got {.raku}"; $*ERR.flush;
                 when !*.defined {
                     $buf .= new;
                     $!dec-supplier.emit($_);
@@ -388,6 +388,7 @@ role Terminal::LineEditor::RawTerminalIO {
                         $!dec-supplier.emit($key => $_);
                     }
                     elsif $decoded ~~ &csi {
+                        # note "CSI regex match: {$/.raku}"; $*ERR.flush;
                         my $tail = ~$2;
                         if (!$0 || !~$0) && ($tail ∈ TAILS) {
                             # Special key with possible modifiers
