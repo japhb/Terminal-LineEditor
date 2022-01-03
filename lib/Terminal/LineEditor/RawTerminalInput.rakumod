@@ -427,7 +427,7 @@ role Terminal::LineEditor::RawTerminalIO {
                             my $button  = $is-low && $masked == MouseButtonMask
                                           ?? UInt !! ($masked + $is-low) + 4 * $high;
                             my $event   = MouseTrackingEvent.new(
-                                              :x(@args[1]), :y(@args[2]),
+                                              :x(+@args[1]), :y(+@args[2]),
                                               :$shift, :$control, :$meta,
                                               :$motion, :$button, :$pressed);
                             $!dec-supplier.emit($event);
