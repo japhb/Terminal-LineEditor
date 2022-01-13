@@ -1,6 +1,19 @@
 Revision history for Terminal-LineEditor
 
 {{$NEXT}}
+  [Functionality]
+  - Support mouse input decoding
+  - Provide RawTerminalIO.set-mouse-event-mode method
+
+  [Packaging]
+  - Switch release method to `mi6 release` with UploadToZef
+
+  [Performance]
+  - Optimize CSI decoding, especially for unmodified special-keys
+
+  [Refactoring]
+  - Improve subclassability of CLIInput
+
 
 0.0.9  2021-11-08
   [Functionality]
