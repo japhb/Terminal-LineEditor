@@ -1,6 +1,9 @@
 Revision history for Terminal-LineEditor
 
 {{$NEXT}}
+  [Docs]
+  - Sketch out a simple todo doc
+
   [Functionality]
   - Support mouse input decoding
   - Provide RawTerminalIO.set-mouse-event-mode method
