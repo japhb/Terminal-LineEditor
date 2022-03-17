@@ -209,6 +209,7 @@ role Terminal::LineEditor::KeyMappable {
          'Ctrl-_' => 'undo',                   # CTRL-_
 
          Backspace   => 'delete-char-back',    # CTRL-?, BACKSPACE
+         Delete      => 'delete-char-forward',
 
          CursorLeft  => 'move-char-back',
          CursorRight => 'move-char-forward',
