@@ -457,7 +457,13 @@ role Terminal::LineEditor::RawTerminalIO {
                             my &cb    := $query.callback;
                             cb($_);
                         }
+                        elsif @!active-queries {
+                            note "AQNM"; note self.WHICH; $*ERR.flush;
+                            dd .sequence, $decoded;
+                            !!! "Active terminal query waiting, but decoded response did not match"
+                        }
                         else {
+                            note "NoAQ"; note self.WHICH; $*ERR.flush;
                             dd .sequence, $decoded;
                             !!! "CSI"
                         }
