@@ -22,7 +22,7 @@ class X::Terminal::LineEditor::UnknownAction is X::Terminal::LineEditor {
 # (previous work by japhb)
 
 enum SpecialKey is export <
-     Backspace
+     Backspace ShiftTab
      CursorUp CursorDown CursorRight CursorLeft CursorHome CursorEnd
      CursorBegin
      Delete Insert Home End PageUp PageDown
@@ -95,6 +95,9 @@ my %special-keys =
 
     # Not sure if this is a Cursor or Edit key, but it uses a Cursor escape
     "\e[E" => CursorBegin,
+
+    # Weird special case for a shifted key
+    "\e[Z" => ShiftTab,
 
     # Cursor key form used with modifiers
     "\e[1A" => CursorUp,
