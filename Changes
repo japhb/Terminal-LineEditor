@@ -1,6 +1,8 @@
 Revision history for Terminal-LineEditor
 
 {{$NEXT}}
+
+0.0.12  2022-07-16T20:13:26-07:00
   [Bug fix]
   - Switch to Terminal::ANSIParser 0.0.3 and use its new codepoint semantics
     to fix https://github.com/japhb/Terminal-LineEditor/issues/3
