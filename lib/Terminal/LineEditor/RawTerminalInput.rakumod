@@ -353,14 +353,20 @@ role Terminal::LineEditor::RawTerminalIO {
     }
 
 
-    #| Start reading input TTY and feeding the parser; parsed stream will
-    #| appear at $!raw-supply, _in binary form_ (as bytes and buffers that must
-    #| be decoded)
+    #| Start reading input TTY and feeding the ANSI parser; parsed stream will
+    #| appear at $!raw-supply, _in tokenized form_ (as codepoints and buffers
+    #| that must be further decoded into input events)
     method start-parser() {
         start {
-            until ⚛$!done {
-                my $b = $.input.read(1) or last;
-                $!parse($b[0]) unless ⚛$!done;
+            LOOP: until ⚛$!done {
+                my $buf = Buf.new;
+
+                repeat {
+                    my $b = $.input.read(1) or last LOOP;
+                    $buf.push($b);
+                } until ⚛$!done || try my $c = $buf.decode;
+
+                $!parse($c.ord) unless ⚛$!done;
             }
         }
     }
@@ -377,12 +383,11 @@ role Terminal::LineEditor::RawTerminalIO {
                 }
                 when Int {
                     $buf.push($_);
-                    try my $c = $buf.decode;
+                    try my $c = chr($_);
                     if $c { $buf .= new; $!dec-supplier.emit($c) }
                 }
                 when Terminal::ANSIParser::SimpleEscape {
                     # No params possible, so just look up full decoded sequence
-                    # (which is implicitly utf-8 decoded when stringified)
                     my $decoded = ~$_;
                     with %special-keys{$decoded} -> $key {
                         $!dec-supplier.emit($key => $_);
@@ -402,8 +407,8 @@ role Terminal::LineEditor::RawTerminalIO {
                     my constant TAILS = set(|< ~ A B C D E F H >);
                     my regex csi { ^ "\e[" (<-[;0..9]>*) (<[;0..9]>+) (.+) $ };
                     my $decoded = .sequence[0] == 0x9B
-                                  ?? "\e[" ~ .sequence.subbuf(1).decode
-                                  !! .sequence.decode;
+                                  ?? "\e[" ~ (~$_).substr(1)
+                                  !! ~$_;
 
                     if %special-keys{$decoded} -> $key {
                         # Unmodified special key/event in CSI form
@@ -482,7 +487,8 @@ role Terminal::LineEditor::RawTerminalIO {
                     # is a query response and return that to the waiting query
                     my $string = ~.string;
                     my regex dcs { ^ ("\eP"|\x[90]) (<-[;0..9]>*) (<[;0..9]>*) (.+) $ };
-                    if .sequence.decode ~~ &dcs {
+                    my $sequence = .sequence;
+                    if ~Terminal::ANSIParser::Sequence.new(:$sequence) ~~ &dcs {
                         my @args = split ';', ~$2;
                         my $lead = "\eP$1";
                         my $tail = ~$3;
