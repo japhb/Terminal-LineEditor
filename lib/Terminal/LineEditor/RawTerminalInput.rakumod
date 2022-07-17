@@ -816,6 +816,7 @@ class Terminal::LineEditor::CLIInput
         my $literal-mode = False;
         my $aborted      = False;
         react whenever $.decoded {
+            # note "Decoded as {.raku}"; $*ERR.flush;
             done unless .defined;
 
             if $_ ~~ MouseTrackingEvent {
