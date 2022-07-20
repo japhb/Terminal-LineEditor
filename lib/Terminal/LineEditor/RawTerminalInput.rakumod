@@ -374,17 +374,14 @@ role Terminal::LineEditor::RawTerminalIO {
     #| Produce a supply of decoded input events
     method start-decoder() {
         start react {
-            my buf8 $buf .= new;
             whenever $!raw-supply {
                 # note "Got {.raku}"; $*ERR.flush;
                 when !*.defined {
-                    $buf .= new;
                     $!dec-supplier.emit($_);
                 }
                 when Int {
-                    $buf.push($_);
                     try my $c = chr($_);
-                    if $c { $buf .= new; $!dec-supplier.emit($c) }
+                    $!dec-supplier.emit($c) if $c;
                 }
                 when Terminal::ANSIParser::SimpleEscape {
                     # No params possible, so just look up full decoded sequence
