@@ -2,6 +2,11 @@ Revision history for Terminal-LineEditor
 
 {{$NEXT}}
 
+0.0.13  2022-07-23T16:31:17-07:00
+  [Bug fix]
+  - Remove now-dead code that just caused GC churn
+
+
 0.0.12  2022-07-16T20:13:26-07:00
   [Bug fix]
   - Switch to Terminal::ANSIParser 0.0.3 and use its new codepoint semantics
