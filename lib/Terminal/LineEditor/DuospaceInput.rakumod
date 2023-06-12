@@ -1,6 +1,8 @@
 # ABSTRACT: Input widgets for duospace (Unicode terminal) text input
 
 use Text::MiscUtils::Layout;
+use Terminal::Capabilities;
+
 use Terminal::LineEditor::EditableBuffer;
 
 
@@ -46,8 +48,11 @@ class Terminal::LineEditor::ScrollingSingleLineInput
  does Terminal::LineEditor::DuospaceLayoutCache {
     has UInt:D $.display-width is required;
 
-    has Str:D $.left-scroll-mark     = '◀';
-    has Str:D $.right-scroll-mark    = '▶';
+    # For backwards compatibility, default to symbol-set Uni1
+    has Terminal::Capabilities:D $.caps .= new(symbol-set => symbol-set('Uni1'));
+
+    has Str   $.left-scroll-mark;
+    has Str   $.right-scroll-mark;
     has Str:D $.left-no-scroll-mark  = ' ';
     has Str:D $.right-no-scroll-mark = ' ';
 
@@ -55,9 +60,19 @@ class Terminal::LineEditor::ScrollingSingleLineInput
     has $.scroll-cursor;
 
 
-    # Initialize scroll-cursor in TWEAK so buffer is ready
     submethod TWEAK() {
+        # Initialize scroll-cursor so buffer is ready
         $!scroll-cursor = self.buffer.add-cursor(:!auto-edit-move);
+
+        # Default scroll marks to match symbol set
+        my constant %marks = ASCII  => « < > »,
+                             Latin1 => < « » >,
+                             WGL4   => < ◄ ► >,
+                             Uni1   => < ◀ ▶ >,
+                             Uni7   => < ⯇ ⯈ >;
+        my $marks = $!caps.best-symbol-choice(%marks);
+        $!left-scroll-mark  //= $marks[0];
+        $!right-scroll-mark //= $marks[1];
     }
 
 
