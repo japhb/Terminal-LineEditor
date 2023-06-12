@@ -1,6 +1,8 @@
 Revision history for Terminal-LineEditor
 
 {{$NEXT}}
+
+0.0.14  2023-06-11T17:48:28-07:00
   [Compatibility]
   - Replace Unicode 7.0 scroll markers with Unicode 1.1 markers for terminal
     compatibility improvement at the cost of minor vertical misalignment
