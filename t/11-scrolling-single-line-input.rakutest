@@ -27,8 +27,8 @@ isa-ok  $input.scroll-cursor, $input.insert-cursor.WHAT;
 
 
 # Default marks
-is $input.left-scroll-mark,     '⯇';
-is $input.right-scroll-mark,    '⯈';
+is $input.left-scroll-mark,     '◀';
+is $input.right-scroll-mark,    '▶';
 is $input.left-no-scroll-mark,  ' ';
 is $input.right-no-scroll-mark, ' ';
 

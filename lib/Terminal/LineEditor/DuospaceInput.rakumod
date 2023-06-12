@@ -46,8 +46,8 @@ class Terminal::LineEditor::ScrollingSingleLineInput
  does Terminal::LineEditor::DuospaceLayoutCache {
     has UInt:D $.display-width is required;
 
-    has Str:D $.left-scroll-mark     = '⯇';
-    has Str:D $.right-scroll-mark    = '⯈';
+    has Str:D $.left-scroll-mark     = '◀';
+    has Str:D $.right-scroll-mark    = '▶';
     has Str:D $.left-no-scroll-mark  = ' ';
     has Str:D $.right-no-scroll-mark = ' ';
 
