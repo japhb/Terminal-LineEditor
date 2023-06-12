@@ -7,8 +7,9 @@
   ],
   "depends": [
     "Term::termios",
-    "Terminal::ANSIParser:ver<0.0.3>",
-    "Text::MiscUtils::Layout"
+    "Terminal::ANSIParser:auth<zef:japhb>:ver<0.0.3+>",
+    "Terminal::Capabilities:auth<zef:japhb>:ver<0.0.1+>",
+    "Text::MiscUtils:auth<zef:japhb>:ver<0.0.7+>"
   ],
   "description": "Generalized terminal line editing",
   "license": "Artistic-2.0",
