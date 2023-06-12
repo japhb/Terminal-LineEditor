@@ -1,6 +1,13 @@
 Revision history for Terminal-LineEditor
 
 {{$NEXT}}
+  [Compatibility]
+  - Support automatic selection of scroll markers based on requested symbol-set
+
+  [Packaging]
+  - Add dependency on Terminal::Capabilities
+  - Make dependency specifications more precise
+
 
 0.0.14  2023-06-11T17:48:28-07:00
   [Compatibility]
