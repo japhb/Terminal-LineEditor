@@ -1,6 +1,8 @@
 Revision history for Terminal-LineEditor
 
 {{$NEXT}}
+
+0.0.16  2023-08-20T15:09:35-07:00
   [Packaging]
   - Require exactly Term::termios:ver<0.2> to avoid bugs later in 0.2.x series.
 
