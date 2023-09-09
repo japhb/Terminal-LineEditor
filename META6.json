@@ -9,7 +9,7 @@
     "Term::termios:ver<0.2>",
     "Terminal::ANSIParser:auth<zef:japhb>:ver<0.0.3+>",
     "Terminal::Capabilities:auth<zef:japhb>:ver<0.0.1+>",
-    "Text::MiscUtils:auth<zef:japhb>:ver<0.0.7+>"
+    "Text::MiscUtils:auth<zef:japhb>:ver<0.0.8+>"
   ],
   "description": "Generalized terminal line editing",
   "license": "Artistic-2.0",
