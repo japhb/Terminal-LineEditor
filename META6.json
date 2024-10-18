@@ -6,7 +6,7 @@
   "build-depends": [
   ],
   "depends": [
-    "Term::termios:ver<0.2>",
+    "Terminal::MakeRaw:ver<1.0.0+>",
     "Terminal::ANSIParser:auth<zef:japhb>:ver<0.0.3+>",
     "Terminal::Capabilities:auth<zef:japhb>:ver<0.0.1+>",
     "Text::MiscUtils:auth<zef:japhb>:ver<0.0.8+>"

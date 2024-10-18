@@ -1,6 +1,6 @@
 # ABSTRACT: Input widgets for raw terminal text input
 
-use Term::termios;
+use Terminal::MakeRaw;
 use Terminal::ANSIParser;
 use Terminal::LineEditor::DuospaceInput;
 use Terminal::LineEditor::History;
@@ -314,8 +314,8 @@ role Terminal::LineEditor::RawTerminalIO {
 
         if $.input.t && !$!saved-termios {
             my $fd = $.input.native-descriptor;
-            $!saved-termios = Term::termios.new(:$fd).getattr;
-            Term::termios.new(:$fd).getattr.makeraw.setattr(:FLUSH);
+            $!saved-termios = Terminal::MakeRaw::getattr($fd);
+            Terminal::MakeRaw::makeraw($fd, :FLUSH);
 
             $!done ⚛= 0;
             self.start-parser;
@@ -330,7 +330,8 @@ role Terminal::LineEditor::RawTerminalIO {
 
         if $!saved-termios {
             $!done ⚛= 1;
-            $!saved-termios.setattr(:DRAIN);
+            my $fd = $.input.native-descriptor;
+            Terminal::MakeRaw::setattr($fd, $!saved-termios, :DRAIN);
             $!saved-termios = Nil;
             $.output.put('') if $nl;
         }
