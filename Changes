@@ -1,6 +1,10 @@
 Revision history for Terminal-LineEditor
 
 {{$NEXT}}
+  [Dependencies]
+  - Replace Term::termios dependency with Terminal::MakeRaw, which doesn't
+    require a C compiler to install.
+
 
 0.0.16  2023-08-20T15:09:35-07:00
   [Packaging]
