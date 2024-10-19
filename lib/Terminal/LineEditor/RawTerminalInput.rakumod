@@ -178,35 +178,35 @@ role Terminal::LineEditor::KeyMappable {
     #| Default key map (from input character name to edit-* method)
     #  Largely based on control characters recognized by POSIX-style shells
     method default-keymap() {
-       # 'Ctrl-@' => '',                       # CTRL-@, CTRL-SPACE
+       # 'Ctrl-@' => '',                       # CTRL-@, CTRL-SPACE (or set-mark)
           Ctrl-A  => 'move-to-start',          # CTRL-A
           Ctrl-B  => 'move-char-back',         # CTRL-B
           Ctrl-C  => 'abort-input',            # CTRL-C
           Ctrl-D  => 'abort-or-delete',        # CTRL-D (or delete-char-forward)
           Ctrl-E  => 'move-to-end',            # CTRL-E
           Ctrl-F  => 'move-char-forward',      # CTRL-F
-       #  Ctrl-G  => 'abort-modal',            # CTRL-G
+       #  Ctrl-G  => 'abort-modal',            # CTRL-G (or cancel-search)
           Ctrl-H  => 'delete-char-back',       # CTRL-H
           Ctrl-I  => 'complete',               # CTRL-I, TAB
           Ctrl-J  => 'finish',                 # CTRL-J, LF
-          Ctrl-K  => 'delete-to-end',          # CTRL-K
+          Ctrl-K  => 'delete-to-end',          # CTRL-K (or delete-line-forward)
           Ctrl-L  => 'refresh-all',            # CTRL-L
           Ctrl-M  => 'finish',                 # CTRL-M, CR
           Ctrl-N  => 'history-next',           # CTRL-N
        #  Ctrl-O  => '',                       # CTRL-O
           Ctrl-P  => 'history-prev',           # CTRL-P
-       #  Ctrl-Q  => '',                       # CTRL-Q
+       #  Ctrl-Q  => '',                       # CTRL-Q (or literal-next)
        #  Ctrl-R  => 'history-reverse-search', # CTRL-R
        #  Ctrl-S  => 'history-forward-search', # CTRL-S
           Ctrl-T  => 'swap-chars',             # CTRL-T
-          Ctrl-U  => 'delete-to-start',        # CTRL-U
+          Ctrl-U  => 'delete-to-start',        # CTRL-U (or delete-line-back)
           Ctrl-V  => 'literal-next',           # CTRL-V
           Ctrl-W  => 'delete-word-back',       # CTRL-W
-       #  Ctrl-X  => 'prefix',                 # CTRL-X
+       #  Ctrl-X  => 'prefix',                 # CTRL-X (or doubled: move-to-mark)
           Ctrl-Y  => 'yank',                   # CTRL-Y
           Ctrl-Z  => 'suspend',                # CTRL-Z
        # 'Ctrl-[' => 'escape',                 # CTRL-[, ESC
-       # 'Ctrl-\' => 'quit',                   # CTRL-\
+       # 'Ctrl-\' => 'quit',                   # CTRL-\ (or quit-process)
        # 'Ctrl-]' => '',                       # CTRL-]
        # 'Ctrl-^' => '',                       # CTRL-^
          'Ctrl-_' => 'undo',                   # CTRL-_
@@ -225,12 +225,25 @@ role Terminal::LineEditor::KeyMappable {
           Alt-c      => 'tclc-word',           # Readline treats this as Capitalize
           Alt-d      => 'delete-word-forward',
           Alt-f      => 'move-word-forward',
+          Alt-h      => 'delete-word-back',
           Alt-l      => 'lowercase-word',
           Alt-t      => 'swap-words',
           Alt-u      => 'uppercase-word',
          "Alt-\x3C"  => 'history-start',       # ALT-<
          "Alt-\x3E"  => 'history-end',         # ALT->
-          ;
+
+         # XXXX: From jart/bestline
+         # Alt-CursorLeft  => 'move-expr-back',
+         # Alt-CursorRight => 'move-expr-forward',
+         # Ctrl-Alt-b  => 'move-expr-back',
+         # Ctrl-Alt-f  => 'move-expr-forward',
+         # Ctrl-Alt-h  => 'delete-word-back',
+         # Alt-y       => 'rotate-ring-and-yank-again',
+         # 'Alt-\'     => 'squeeze-whitespace',
+
+         # XXXX: Additional default bindings from Bash Readline can be found via:
+         # INPUTRC=/dev/null bash -c 'bind -pm emacs' | grep -vE '^#|: (do-lowercase-version|self-insert)$' | raku -e '.say for lines().sort'
+         ;
     }
 
     #| Class for instantiating input fields; define in composing class
