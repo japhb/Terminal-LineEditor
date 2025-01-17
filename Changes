@@ -2,6 +2,12 @@ Revision history for Terminal-LineEditor
 
 {{$NEXT}}
 
+0.0.18  2025-01-17T06:59:58-08:00
+  [Dependencies]
+  - Update dependency on Terminal::MakeRaw to 1.0.1+ to ensure Mac users don't
+    end up with a buggy version of that dependency.
+
+
 0.0.17  2024-10-18T17:04:27-07:00
   [Dependencies]
   - Replace Term::termios dependency with Terminal::MakeRaw, which doesn't
