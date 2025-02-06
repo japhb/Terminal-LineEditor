@@ -565,20 +565,9 @@ role Terminal::LineEditor::RawTerminalUtils {
     #| Detect terminal size, returning a Promise that will be kept with
     #| (rows, cols) or Empty if unable
     method detect-terminal-size() {
-        # XXXX: This query has been found to have compatibility problems; it
-        #       works in xterm and libvte terminals, but not in many others
-        #       such as Konsole, Windows Console, linux, etc.
-        # my $response = self.query-terminal("\e[18t", 't');
-        # $response ~~ /^ "\e[8;" (\d+) ';' (\d+) 't' $/ ?? (+$0, +$1) !! Empty
-
-        # Instead of the above, take advantage of clipping behavior of cursor
-        # movement commands by saving the cursor, requesting a move way outside
-        # the terminal, detecting the cursor position, and restoring the cursor.
-
-        $.output.print("\e7\e[9999;9999H");
-        my $p := self.detect-cursor-pos;
-        $.output.print("\e8");
-        $p
+        my $fd = $.output.native-descriptor;
+        my $size = Terminal::API::get-window-size($fd);
+        Promise.kept(($size.rows, $size.cols))
     }
 
     #| Suspend using SIGTSTP job control, switching back to normal mode first;
