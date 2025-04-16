@@ -59,6 +59,10 @@ enum MouseEventMode is export (
     MouseAnyEvents       => 1003,  # Press, release, any movement
 );
 
+enum BracketedPasteMode is export (
+    PasteNoBrackets      => False,
+    PasteWithBrackets    => True,
+);
 
 class ModifiedSpecialKey {
     has SpecialKey $.key;
@@ -311,6 +315,7 @@ role Terminal::LineEditor::RawTerminalIO {
     has atomicint              $!done          = 0;
     has                        $!parse         = make-ansi-parser(emit-item => { $!raw-supplier.emit($_) });
     has MouseEventMode:D       $!previous-mouse-mode = MouseNoEvents;
+    has BracketedPasteMode:D   $!previous-paste-mode = PasteNoBrackets;
     has                        $!saved-termios;
     has                        @!active-queries;
 
@@ -364,6 +369,21 @@ role Terminal::LineEditor::RawTerminalIO {
 
         $.output.flush;
         $!previous-mouse-mode = $mode;
+    }
+
+    #| Turn bracketed paste mode on or off.
+    method set-bracketed-paste-mode(BracketedPasteMode:D $mode) {
+        # Encoding/extras:
+        #   1004: Focus events
+        #   1006: SGR encoding
+
+	$.output.print: do given $mode {
+            when PasteNoBrackets { "\e[?2004l" }
+            when PasteWithBrackets { "\e[?2004h" }
+	}
+
+        $.output.flush;
+        $!previous-paste-mode = $mode;
     }
 
 
@@ -825,9 +845,11 @@ class Terminal::LineEditor::CLIInput
 
         # Read raw characters and dispatch either as actions or chars to insert
         my $literal-mode = False;
+        my $pasting-mode = False;
+        my @paste-buffer;
         my $aborted      = False;
         react whenever $.decoded {
-            # note "Decoded as {.raku}"; $*ERR.flush;
+	    # note "Decoded as {.raku}"; $*ERR.flush;
             done unless .defined;
 
             if $_ ~~ MouseTrackingEvent {
@@ -837,6 +859,31 @@ class Terminal::LineEditor::CLIInput
                 my $string = $_ ~~ Str ?? $_ !! ~(.value);
                 self.do-edit('insert-string', $string);
                 $literal-mode = False;
+            }
+            # Pasting mode is a bit like literal mode, but it's sticky until
+            # it is turned off by 'paste-end'.
+            elsif $pasting-mode {
+                my $key = self.decode-keyname($_);
+                if !$key {
+                    @paste-buffer.push: $_;
+                }
+                elsif $key.defined && $key eq "PasteEnd" {
+                    dd @paste-buffer;
+                    $pasting-mode = False;
+                    if "paste-string" (elem) self.special-actions {
+                        self.do-edit('paste-string', @paste-buffer.join(""));
+                    }
+                    else {
+                        self.do-edit('insert-string', @paste-buffer.join(""));
+                    }
+                    @paste-buffer = Empty;
+                }
+                elsif $key.defined && $key eq "Ctrl-M" {
+                    @paste-buffer.push: "\n";
+                }
+                else {
+                    note "surprising value for $key.raku() with $_.raku() ...";
+                }
             }
             else {
                 my $key = self.decode-keyname($_);
@@ -864,6 +911,7 @@ class Terminal::LineEditor::CLIInput
                                                    done
                                                }
                                              self.do-edit('delete-char-forward') }
+                    when 'paste-start'     { $pasting-mode = True }
                     default                { self.do-edit($_) }
                 }
             }
