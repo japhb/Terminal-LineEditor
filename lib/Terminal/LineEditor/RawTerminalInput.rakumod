@@ -321,7 +321,7 @@ role Terminal::LineEditor::RawTerminalIO {
     }
 
     #| Switch input to raw mode if it's a TTY and not already in raw mode
-    method enter-raw-mode()  {
+    method enter-raw-mode() {
         # If input is a TTY and not currently in raw mode (with a saved
         # termios), then start the parser, save current TTY mode, flush
         # previous I/O, and convert TTY to raw mode
