@@ -342,10 +342,11 @@ role Terminal::LineEditor::RawTerminalIO {
         # mark the saved termios as unused, and optionally output a \n to push
         # the cursor to the start of the next line
 
-        if $!saved-termios {
+        if $!saved-termios && $!saved-fd > -1 {
             $!done ⚛= 1;
             Terminal::MakeRaw::setattr($!saved-fd, $!saved-termios, :DRAIN);
             $!saved-termios = Nil;
+            $!save-fd       = -1;
             $.output.put('') if $nl;
         }
     }
