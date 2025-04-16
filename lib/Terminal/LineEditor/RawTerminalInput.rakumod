@@ -312,6 +312,7 @@ role Terminal::LineEditor::RawTerminalIO {
     has                        $!parse         = make-ansi-parser(emit-item => { $!raw-supplier.emit($_) });
     has MouseEventMode:D       $!previous-mouse-mode = MouseNoEvents;
     has                        $!saved-termios;
+    has int                    $!saved-fd;
     has                        @!active-queries;
 
     #| Atomically set done, even from outside role
@@ -326,9 +327,9 @@ role Terminal::LineEditor::RawTerminalIO {
         # previous I/O, and convert TTY to raw mode
 
         if $.input.t && !$!saved-termios {
-            my $fd = $.input.native-descriptor;
-            $!saved-termios = Terminal::MakeRaw::getattr($fd);
-            Terminal::MakeRaw::makeraw($fd, :FLUSH);
+            $!saved-fd = $.input.native-descriptor;
+            $!saved-termios = Terminal::MakeRaw::getattr($!saved-fd);
+            Terminal::MakeRaw::makeraw($!saved-fd, :FLUSH);
 
             $!done ⚛= 0;
             self.start-parser;
@@ -343,8 +344,7 @@ role Terminal::LineEditor::RawTerminalIO {
 
         if $!saved-termios {
             $!done ⚛= 1;
-            my $fd = $.input.native-descriptor;
-            Terminal::MakeRaw::setattr($fd, $!saved-termios, :DRAIN);
+            Terminal::MakeRaw::setattr($!saved-fd, $!saved-termios, :DRAIN);
             $!saved-termios = Nil;
             $.output.put('') if $nl;
         }
