@@ -2,6 +2,11 @@ Revision history for Terminal-LineEditor
 
 {{$NEXT}}
 
+0.0.19  2025-05-13T16:55:56-07:00
+  [Dependencies]
+  - Switch from Terminal::MakeRaw to Terminal::API for Windows compatibility.
+
+
 0.0.18  2025-01-17T06:59:58-08:00
   [Dependencies]
   - Update dependency on Terminal::MakeRaw to 1.0.1+ to ensure Mac users don't
