@@ -2,6 +2,12 @@ Revision history for Terminal-LineEditor
 
 {{$NEXT}}
 
+0.0.20  2025-05-13T17:12:27-07:00
+  [Bug fix]
+  - Avoid blocking on input's native-descriptor method in leave-raw-mode
+    by saving it away in enter-raw-mode.
+
+
 0.0.19  2025-05-13T16:55:56-07:00
   [Dependencies]
   - Switch from Terminal::MakeRaw to Terminal::API for Windows compatibility.
