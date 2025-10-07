@@ -476,9 +476,14 @@ role Terminal::LineEditor::SingleLineTextInput {
     }
 
 
-    ### Insert/Yank/Swap
+    ### Insert/Paste/Yank/Swap
     method edit-insert-string(Str:D $string --> Bool) {
         $.buffer.insert($.insert-cursor.pos, $string)
+    }
+
+    method edit-paste-buffer(@buffer --> Bool) {
+        # Default paste behavior: join buffer into a string and insert that
+        $.buffer.insert($.insert-cursor.pos, @buffer.join)
     }
 
     method edit-yank(--> Bool) {

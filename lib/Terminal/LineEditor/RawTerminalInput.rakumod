@@ -59,6 +59,11 @@ enum MouseEventMode is export (
     MouseAnyEvents       => 1003,  # Press, release, any movement
 );
 
+enum BracketedPasteMode is export <
+    PasteNoBrackets
+    PasteWithBrackets
+>;
+
 
 class ModifiedSpecialKey {
     has SpecialKey $.key;
@@ -221,6 +226,8 @@ role Terminal::LineEditor::KeyMappable {
          CursorUp    => 'history-prev',
          CursorDown  => 'history-next',
 
+         PasteStart  => 'paste-start',
+
           Alt-b      => 'move-word-back',
           Alt-c      => 'tclc-word',           # Readline treats this as Capitalize
           Alt-d      => 'delete-word-forward',
@@ -311,6 +318,7 @@ role Terminal::LineEditor::RawTerminalIO {
     has atomicint              $!done          = 0;
     has                        $!parse         = make-ansi-parser(emit-item => { $!raw-supplier.emit($_) });
     has MouseEventMode:D       $!previous-mouse-mode = MouseNoEvents;
+    has BracketedPasteMode:D   $.current-paste-mode  = PasteNoBrackets;
     has                        $!saved-term-config;
     has                        $!saved-fd;
     has                        @!active-queries;
@@ -368,6 +376,12 @@ role Terminal::LineEditor::RawTerminalIO {
         $!previous-mouse-mode = $mode;
     }
 
+    #| Turn bracketed paste mode on or off
+    method set-bracketed-paste-mode(BracketedPasteMode:D $mode) {
+        $.output.print($mode ?? "\e[?2004h" !! "\e[?2004l");
+        $.output.flush;
+        $!current-paste-mode = $mode;
+    }
 
     #| Start reading input TTY and feeding the ANSI parser; parsed stream will
     #| appear at $!raw-supply, _in tokenized form_ (as codepoints and buffers
@@ -657,8 +671,11 @@ class Terminal::LineEditor::ScrollingSingleLineInput::ANSI
     #| Resolve an edit action and compute a new refresh string
     method do-edit($action, $insert?) {
         # Do edit and determine if contents actually changed
-        my $edited = $insert.defined ?? self.edit-insert-string($insert)
-                                     !! self."edit-$action"();
+        my $edited = $insert.defined
+                     ?? ($action eq 'insert-string'
+                         ?? self.edit-insert-string($insert)
+                         !! self.edit-paste-buffer($insert))
+                     !! self."edit-$action"();
 
         self.refresh-string($edited)
     }
@@ -685,7 +702,7 @@ class Terminal::LineEditor::CLIInput
         constant $special
             = set < abort-input abort-or-delete finish literal-next suspend
                     history-start history-end history-next history-prev
-                    complete >;
+                    complete paste-start >;
     }
 
     #| Fetch completions based on current buffer contents and cursor pos
@@ -827,6 +844,8 @@ class Terminal::LineEditor::CLIInput
 
         # Read raw characters and dispatch either as actions or chars to insert
         my $literal-mode = False;
+        my $paste-mode   = False;
+        my @paste-buffer;
         my $aborted      = False;
         react whenever $.decoded {
             # note "Decoded as {.raku}"; $*ERR.flush;
@@ -840,6 +859,20 @@ class Terminal::LineEditor::CLIInput
                 self.do-edit('insert-string', $string);
                 $literal-mode = False;
             }
+            elsif $paste-mode {
+                my $key = self.decode-keyname($_);
+                if !$key {
+                    @paste-buffer.push($_);
+                }
+                elsif $key eq 'PasteEnd' {
+                    self.do-edit('paste-buffer', @paste-buffer);
+                    @paste-buffer = Empty;
+                    $paste-mode   = False;
+                }
+                else {
+                    # Intentionally ignore all other special keys
+                }
+            }
             else {
                 my $key = self.decode-keyname($_);
                 if !$key {
@@ -851,6 +884,7 @@ class Terminal::LineEditor::CLIInput
                     reset-completions;
 
                     when 'literal-next'    { $literal-mode = True }
+                    when 'paste-start'     { $paste-mode = True if $.current-paste-mode }
                     when 'history-start'   { do-history-start }
                     when 'history-prev'    { do-history-prev }
                     when 'history-next'    { do-history-next }

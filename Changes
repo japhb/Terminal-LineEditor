@@ -1,6 +1,10 @@
 Revision history for Terminal-LineEditor
 
 {{$NEXT}}
+  [Functionality]
+  - Initial support for bracketed-paste-mode, inspired by timo++'s
+    https://github.com/japhb/Terminal-LineEditor/pull/13
+
 
 0.0.21  2025-10-06T22:15:47-07:00
   [Compatibility]

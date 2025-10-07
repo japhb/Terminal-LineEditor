@@ -5,7 +5,7 @@ use Terminal::LineEditor;
 use Terminal::LineEditor::EditableBuffer;
 
 
-plan 243;
+plan 251;
 
 
 # Compose role into a stub class
@@ -100,7 +100,19 @@ is  $input.buffer.contents, 'foo';
 is  $input.insert-cursor.pos, 3;
 ok  $input.insert-cursor.at-end;
 
-ok  $input.edit-insert-string(' baz');
+ok  $input.edit-insert-string(' b');
+is  $input.buffer.contents, 'foo b';
+is  $input.insert-cursor.pos, 5;
+ok  $input.insert-cursor.at-end;
+
+
+# Pastes
+ok  $input.edit-paste-buffer(< a z >);
+is  $input.buffer.contents, 'foo baz';
+is  $input.insert-cursor.pos, 7;
+ok  $input.insert-cursor.at-end;
+
+nok $input.edit-paste-buffer(Empty);
 is  $input.buffer.contents, 'foo baz';
 is  $input.insert-cursor.pos, 7;
 ok  $input.insert-cursor.at-end;
