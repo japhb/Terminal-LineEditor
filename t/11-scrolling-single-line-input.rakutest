@@ -26,11 +26,11 @@ isa-ok  $input.insert-cursor, Terminal::LineEditor::SingleLineTextBuffer::Cursor
 isa-ok  $input.scroll-cursor, $input.insert-cursor.WHAT;
 
 
-# Default marks
-is $input.left-scroll-mark,     '◀';
-is $input.right-scroll-mark,    '▶';
-is $input.left-no-scroll-mark,  ' ';
-is $input.right-no-scroll-mark, ' ';
+# Default marks (only specify width for marks that depend on terminal auto-detect)
+is $input.left-scroll-mark.chars,  1;
+is $input.right-scroll-mark.chars, 1;
+is $input.left-no-scroll-mark,   ' ';
+is $input.right-no-scroll-mark,  ' ';
 
 
 # available-width()

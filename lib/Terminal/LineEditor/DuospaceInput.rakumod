@@ -2,6 +2,7 @@
 
 use Text::MiscUtils::Layout;
 use Terminal::Capabilities;
+use Terminal::Capabilities::Autodetect;
 
 use Terminal::LineEditor::EditableBuffer;
 
@@ -48,8 +49,7 @@ class Terminal::LineEditor::ScrollingSingleLineInput
  does Terminal::LineEditor::DuospaceLayoutCache {
     has UInt:D $.display-width is required;
 
-    # For backwards compatibility, default to symbol-set Uni1
-    has Terminal::Capabilities:D $.caps .= new(symbol-set => symbol-set('Uni1'));
+    has Terminal::Capabilities $.caps;
 
     has Str   $.left-scroll-mark;
     has Str   $.right-scroll-mark;
@@ -63,6 +63,9 @@ class Terminal::LineEditor::ScrollingSingleLineInput
     submethod TWEAK() {
         # Initialize scroll-cursor so buffer is ready
         $!scroll-cursor = self.buffer.add-cursor(:!auto-edit-move);
+
+        # Autodetect capabilities if not supplied
+        $!caps //= terminal-env-detect()[0];
 
         # Default scroll marks to match symbol set
         my constant %marks = ASCII  => « < > »,

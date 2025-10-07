@@ -1,6 +1,13 @@
 Revision history for Terminal-LineEditor
 
 {{$NEXT}}
+  [Compatibility]
+  - Autodect terminal capabilities based on environment variables
+
+  [Packaging]
+  - Update Terminal::Capabilities dependency to :ver<0.0.8+> for terminal
+    autodetection functionality
+
 
 0.0.20  2025-05-13T17:12:27-07:00
   [Bug fix]
