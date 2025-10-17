@@ -1,6 +1,8 @@
 Revision history for Terminal-LineEditor
 
 {{$NEXT}}
+
+0.0.23  2025-10-16T23:01:55-07:00
   [Packaging]
   - Bump dependencies to Terminal::Capabilities 0.0.11+ and
     Terminal::ANSIParser 0.0.4+ to pick up many bugfixes and improvements
